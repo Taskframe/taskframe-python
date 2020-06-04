@@ -1,3 +1,3 @@
-idx,path,identifier
-0,imgs/foo.jpg,foo
-1,imgs/bar.jpg,bar
+idx,path,identifier,label
+0,imgs/foo.jpg,foo,
+1,imgs/bar.jpg,bar,cat

@@ -15,10 +15,6 @@ API_VERSION = os.environ.get("TASKFRAME_API_VERSION", "v1")
 API_URL = f"{API_ENDPOINT}/api/{API_VERSION}"
 
 
-def open_file(*args, **kwargs):
-    return open(*args, **kwargs)
-
-
 class CustomIdsMismatch(Exception):
     def __init__(self, message="mismatch in length of dataset and custom_ids"):
         super().__init__(message)
@@ -57,17 +53,28 @@ class Taskframe(object):
         self.dataset_custom_ids = None
 
     def preview(self):
-        message = {"type": "set_project", "data": self.to_dict()}
+        tf_message = {"type": "set_taskframe", "data": self.to_dict()}
+
+        task_message = {}
+        if self.dataset and len(self.dataset):
+            item, _, _ = self.dataset.get_random()
+            serialized_item = self.dataset.serialize_item_preview(item, self.id)
+
+            task_message = json.dumps({"type": "set_task", "data": serialized_item})
         css_id = str(int(random.random() * 10000))
         html = f"""
+        <iiimg src="{serialized_item['input_url']}"/>
         <iframe id="frame_{css_id}" src="https://localhost:3000/embed/preview" frameBorder=0 style="width: 100%; height: 600px;"></iframe>
         <script>
         (function(){{
+            console.log('$$$$', {task_message});
             var $iframe = document.querySelector('#frame_{css_id}');
             var init = false;
             postMessageHandler = function(e) {{
                 if (e.source !==  $iframe.contentWindow || e.data !== 'ready' || init) return;
-                $iframe.contentWindow.postMessage('{json.dumps(message)}', '*');
+                $iframe.contentWindow.postMessage('{json.dumps(tf_message)}', '*');
+                $iframe.contentWindow.postMessage('{task_message}', '*');
+
                 init = true;
             }}
             window.removeEventListener('message', postMessageHandler);
@@ -106,7 +113,7 @@ class Taskframe(object):
         return session
 
     def sync(self):
-        response = self.session.get(f"{API_URL}/taskframes/{self.id}/",)
+        response = self.session.get(f"{API_URL}/taskframes/{self.id}/")
         return response.json()
 
     def submit(self):
@@ -126,15 +133,17 @@ class Taskframe(object):
     def create(self):
         self.session.post(f"{API_URL}/taskframes/", json=self.to_dict())
 
-    def add_dataset_from_folder(self, path, custom_ids=None):
-        self.dataset = Dataset.from_folder(path, custom_ids=custom_ids,)
-
+    def add_dataset_from_list(
+        self, items, input_type=None, custom_ids=None, labels=None
+    ):
+        self.dataset = Dataset.from_list(
+            items, input_type=input_type, custom_ids=custom_ids, labels=labels
+        )
         return self
 
-    def add_dataset_from_list(self, items, input_type=None, custom_ids=None):
-        self.dataset = Dataset.from_list(
-            items, input_type=input_type, custom_ids=custom_ids
-        )
+    def add_dataset_from_folder(self, path, custom_ids=None, labels=None):
+        self.dataset = Dataset.from_folder(path, custom_ids=custom_ids, labels=labels)
+
         return self
 
     def add_dataset_from_csv(
@@ -144,6 +153,7 @@ class Taskframe(object):
         input_type=None,
         base_path=None,
         custom_id_column=None,
+        label_column=None,
     ):
         self.dataset = Dataset.from_csv(
             csv_path,
@@ -151,6 +161,7 @@ class Taskframe(object):
             input_type=input_type,
             base_path=base_path,
             custom_id_column=custom_id_column,
+            label_column=label_column,
         )
         return self
 
@@ -161,6 +172,7 @@ class Taskframe(object):
         input_type=None,
         base_path=None,
         custom_id_column=None,
+        label_column=None,
     ):
         self.dataset = Dataset.from_dataframe(
             dataframe,
@@ -168,55 +180,39 @@ class Taskframe(object):
             input_type=input_type,
             base_path=base_path,
             custom_id_column=custom_id_column,
+            label_column=label_column,
         )
         return self
 
     def submit_dataset(self):
+        # INPUT_TYPE_FILE doesnt support batches, post items one by one.
         if self.dataset.input_type == Dataset.INPUT_TYPE_FILE:
-            for item, custom_id in self.dataset.iterator():
-                self.submit_dataset_file(item, custom_id=custom_id)
+            for item, custom_id, label in self.dataset:
+
+                data = self.dataset.serialize_item(
+                    item, self.id, custom_id=custom_id, label=label
+                )
+                resp = self.session.post(f"{API_URL}/tasks/", files=data)
+                if resp.status_code >= 400:
+                    error_message = resp.text
+
+                    raise ApiError(resp.status_code, error_message)
             return self
 
         # TODO: sub-batches.
-        data = []
-        for item, custom_id in self.dataset.iterator():
-            data.append(
-                remove_none_values(
-                    {
-                        "taskframe_id": self.id,
-                        "custom_id": custom_id,
-                        "input_data": (
-                            item
-                            if self.dataset.input_type == Dataset.INPUT_TYPE_DATA
-                            else None
-                        ),
-                        "input_url": (
-                            item
-                            if self.dataset.input_type == Dataset.INPUT_TYPE_URL
-                            else None
-                        ),
-                    }
-                )
-            )
-
+        data = [
+            self.dataset.serialize_item(item, self.id, custom_id=custom_id, label=label)
+            for item, custom_id, label in self.dataset
+        ]
         self.session.post(f"{API_URL}/tasks/", json=data)
         return self
 
-    def submit_dataset_file(self, item, custom_id=None):
-        path = Path(item)
-        file_ = open_file(path, "rb")
-
-        data = {
-            "taskframe_id": (None, self.id),
-            "input_file": (path.name, file_),
-        }
-        if custom_id:
-            data["custom_id"] = (None, custom_id)
-        resp = self.session.post(f"{API_URL}/tasks/", files=data)
-        if resp.status_code >= 400:
-            error_message = resp.text
-
-            raise ApiError(resp.status_code, error_message)
+    def set_training_requirement(self, required_score):
+        resp = self.session.post(
+            f"{API_URL}/taskframes/{self.id}/set_training_requirement/",
+            data={"required_score": required_score},
+        )
+        return self
 
 
 def remove_none_values(obj):

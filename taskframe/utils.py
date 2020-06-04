@@ -12,3 +12,7 @@ is_url_regex = re.compile(
 
 def is_url(url):
     return re.match(is_url_regex, url) is not None
+
+
+def remove_none_values(obj):
+    return {k: v for k, v in obj.items() if v is not None}
