@@ -20,10 +20,16 @@ def open_file(*args, **kwargs):
 def guess_input_type(first_item, base_path=Path()):
     if is_url(str(first_item)):
         return Dataset.INPUT_TYPE_URL
-    if (isinstance(first_item, Path) or isinstance(first_item, str)) and (
-        Path(first_item).exists() or (base_path / Path(first_item)).exists()
-    ):
-        return Dataset.INPUT_TYPE_FILE
+    try:
+        if (isinstance(first_item, Path) or isinstance(first_item, str)) and (
+            Path(first_item).exists() or (base_path / Path(first_item)).exists()
+        ):
+            return Dataset.INPUT_TYPE_FILE
+    except OSError as exc:
+        if exc.errno == 36:  # Filename too long: its probably raw data.
+            pass
+        else:
+            raise
     return Dataset.INPUT_TYPE_DATA
 
 

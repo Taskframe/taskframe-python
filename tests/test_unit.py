@@ -76,23 +76,25 @@ class TestClass:
             "https://images.pexels.com/photos/104827/cat-pet-animal-domestic-104827.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
         ]
 
-        cls.urls_json_data = [
-            {
-                "taskframe_id": cls.tf.id,
-                "custom_id": "fizz",
-                "input_url": "https://i.dailymail.co.uk/1s/2019/11/23/09/21370544-0-image-a-4_1574501241272.jpg",
-                "input_type": "url",
-                "is_training": False,
-            },
-            {
-                "taskframe_id": cls.tf.id,
-                "custom_id": "buzz",
-                "input_url": "https://images.pexels.com/photos/104827/cat-pet-animal-domestic-104827.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-                "is_training": True,
-                "input_type": "url",
-                "answer": "cat",
-            },
-        ]
+        cls.urls_json_data = {
+            "items": [
+                {
+                    "taskframe_id": cls.tf.id,
+                    "custom_id": "fizz",
+                    "input_url": "https://i.dailymail.co.uk/1s/2019/11/23/09/21370544-0-image-a-4_1574501241272.jpg",
+                    "input_type": "url",
+                    "is_training": False,
+                },
+                {
+                    "taskframe_id": cls.tf.id,
+                    "custom_id": "buzz",
+                    "input_url": "https://images.pexels.com/photos/104827/cat-pet-animal-domestic-104827.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+                    "is_training": True,
+                    "input_type": "url",
+                    "answer": "cat",
+                },
+            ]
+        }
 
     def test_sync(self):
         data = self.tf.sync()

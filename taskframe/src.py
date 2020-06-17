@@ -200,10 +200,14 @@ class Taskframe(object):
             return self
 
         # TODO: sub-batches.
-        data = [
-            self.dataset.serialize_item(item, self.id, custom_id=custom_id, label=label)
-            for item, custom_id, label in self.dataset
-        ]
+        data = {
+            "items": [
+                self.dataset.serialize_item(
+                    item, self.id, custom_id=custom_id, label=label
+                )
+                for item, custom_id, label in self.dataset
+            ]
+        }
         self.session.post(f"{API_URL}/tasks/", json=data)
         return self
 
