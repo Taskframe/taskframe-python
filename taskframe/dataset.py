@@ -10,6 +10,10 @@ from .utils import is_url, remove_none_values
 mimetypes.init()
 
 
+class InvalidData(Exception):
+    pass
+
+
 def get_or_none(list_, idx):
     return list_[idx] if idx < len(list_) else None
 
@@ -56,6 +60,9 @@ class Dataset(object):
         self.items = items
         self.custom_ids = custom_ids or []
         self.labels = labels or []
+
+        for item in self.items:
+            self.sanity_check_item(item)
 
     def __len__(self):
         return len(self.items)
@@ -104,7 +111,9 @@ class Dataset(object):
         return dataset_class_map[input_type]
 
     @classmethod
-    def from_folder(cls, path, custom_ids=None, labels=None, recursive=False, pattern="*"):
+    def from_folder(
+        cls, path, custom_ids=None, labels=None, recursive=False, pattern="*"
+    ):
         items = []
         path = Path(path)
         if recursive:
@@ -198,6 +207,9 @@ class Dataset(object):
     ):
         raise NotImplementedError()
 
+    def sanity_check_item(self, item):
+        raise NotImplementedError()
+
     def serialize_item_preview(self, *args, **kwargs):
         return self.serialize_item(*args, **kwargs)
 
@@ -206,13 +218,28 @@ class FileDataset(Dataset):
 
     input_type = "file"
 
-    def __init__(self, *args, base_path=None, **kwargs):
-        super().__init__(*args, **kwargs)
+    max_file_size = 50 * 1000 * 1000  # 50MB
+
+    def __init__(self, items, custom_ids=None, labels=None, base_path=None, **kwargs):
+        self.items = items
+        self.custom_ids = custom_ids or []
+        self.labels = labels or []
         base_path = Path(base_path) if base_path else None
         needs_preprend = base_path and (base_path / Path(self.items[0])).exists()
 
         if needs_preprend:
             self.items = [base_path / Path(item) for item in self.items]
+
+        for item in self.items:
+            self.sanity_check_item(item)
+
+    def sanity_check_item(self, item):
+        item = Path(item)
+        if not item.exists():
+            raise InvalidData(f"file does not exist: {str(item)}")
+        if Path(item).stat().st_size > self.max_file_size:
+            raise InvalidData(f"File larger than 50MB: {str(item)}")
+        # TODO: check that item matches input_type.
 
     def serialize_item(self, item, taskframe_id, custom_id=None, label=None):
         path = Path(item)
@@ -265,6 +292,11 @@ class UrlDataset(Dataset):
             }
         )
 
+    def sanity_check_item(self, item):
+        if not is_url(item):
+            raise InvalidData("Not a URL: {item}")
+        # TODO: check that item matches input_type.
+
 
 class DataDataset(Dataset):
 
@@ -281,3 +313,6 @@ class DataDataset(Dataset):
                 "taskframe_id": taskframe_id,
             }
         )
+
+    def sanity_check_item(self, item):
+        pass  # TODO: check that item matches input_type.
