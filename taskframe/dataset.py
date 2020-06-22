@@ -1,5 +1,6 @@
 import base64
 import csv
+import json
 import mimetypes
 import random
 from pathlib import Path
@@ -103,12 +104,18 @@ class Dataset(object):
         return dataset_class_map[input_type]
 
     @classmethod
-    def from_folder(cls, path, custom_ids=None, labels=None):
+    def from_folder(cls, path, custom_ids=None, labels=None, recursive=False, pattern="*"):
+        items = []
+        path = Path(path)
+        if recursive:
+            items = path.rglob(pattern)
+        else:
+            items = path.glob(pattern)
+
+        items = [x for x in items if x.is_file() and x.name != ".DS_Store"]
+
         return cls.from_list(
-            list(Path(path).iterdir()),
-            input_type=cls.INPUT_TYPE_FILE,
-            custom_ids=custom_ids,
-            labels=labels,
+            items, input_type=cls.INPUT_TYPE_FILE, custom_ids=custom_ids, labels=labels,
         )
 
     @classmethod
@@ -213,13 +220,13 @@ class FileDataset(Dataset):
         data = {
             "taskframe_id": (None, taskframe_id),
             "input_file": (path.name, file_),
-            "input_type": self.input_type,
+            "input_type": (None, self.input_type),
             "is_training": (None, bool(label)),
         }
         if custom_id:
             data["custom_id"] = (None, custom_id)
         if label:
-            data["answer"] = (None, label)
+            data["answer"] = (None, json.dumps(label))
 
         return data
 
@@ -235,7 +242,7 @@ class FileDataset(Dataset):
                 "custom_id": custom_id if custom_id else None,
                 "input_url": data_url,
                 "input_type": "url",
-                "answer": label if label else None,
+                "answer": json.dumps(label) if label else None,
                 "is_training": bool(label),
                 "taskframe_id": taskframe_id,
             }

@@ -12,7 +12,7 @@ class TestClass:
     @classmethod
     def setup_class(cls):
         cls.tf = taskframe.Taskframe(id=os.environ.get("TEST_TASKFRAME_ID"))
-        cls.tf.session.verify = False
+        cls.tf.client.session.verify = False
 
     def test_sync(self):
         data = self.tf.sync()

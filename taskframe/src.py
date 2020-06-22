@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 from IPython.display import HTML, Javascript, display
 
+from .client import Client
 from .dataset import Dataset
 from .utils import is_url
 
@@ -18,14 +19,6 @@ API_URL = f"{API_ENDPOINT}/api/{API_VERSION}"
 class CustomIdsMismatch(Exception):
     def __init__(self, message="mismatch in length of dataset and custom_ids"):
         super().__init__(message)
-
-
-class ApiError(Exception):
-    """API responded with error"""
-
-    def __init__(self, status_code, message):
-        super().__init__("<Response [{}]> {}".format(status_code, message))
-        self.status_code = status_code
 
 
 class Taskframe(object):
@@ -48,9 +41,7 @@ class Taskframe(object):
         self.instruction_details = instruction_details
         self.name = name
         self.id = id
-
-        self.session = self.create_session()
-        self.dataset_custom_ids = None
+        self.client = Client()
 
     def preview(self):
         tf_message = {"type": "set_taskframe", "data": self.to_dict()}
@@ -105,15 +96,8 @@ class Taskframe(object):
             params["classes"] = self.classes
         return params
 
-    def create_session(self):
-        session = requests.Session()
-        from . import api_key
-
-        session.headers.update({"authorization": f"Token {api_key}"})
-        return session
-
     def sync(self):
-        response = self.session.get(f"{API_URL}/taskframes/{self.id}/")
+        response = self.client.get(f"{API_URL}/taskframes/{self.id}/")
         return response.json()
 
     def submit(self):
@@ -128,10 +112,10 @@ class Taskframe(object):
         return self
 
     def update(self):
-        self.session.put(f"{API_URL}/taskframes/{self.id}", json=self.to_dict())
+        self.client.put(f"{API_URL}/taskframes/{self.id}", json=self.to_dict())
 
     def create(self):
-        self.session.post(f"{API_URL}/taskframes/", json=self.to_dict())
+        self.client.post(f"{API_URL}/taskframes/", json=self.to_dict())
 
     def add_dataset_from_list(
         self, items, input_type=None, custom_ids=None, labels=None
@@ -141,8 +125,16 @@ class Taskframe(object):
         )
         return self
 
-    def add_dataset_from_folder(self, path, custom_ids=None, labels=None):
-        self.dataset = Dataset.from_folder(path, custom_ids=custom_ids, labels=labels)
+    def add_dataset_from_folder(
+        self, path, custom_ids=None, labels=None, recursive=False, pattern="*"
+    ):
+        self.dataset = Dataset.from_folder(
+            path,
+            custom_ids=custom_ids,
+            labels=labels,
+            recursive=recursive,
+            pattern=pattern,
+        )
 
         return self
 
@@ -192,11 +184,7 @@ class Taskframe(object):
                 data = self.dataset.serialize_item(
                     item, self.id, custom_id=custom_id, label=label
                 )
-                resp = self.session.post(f"{API_URL}/tasks/", files=data)
-                if resp.status_code >= 400:
-                    error_message = resp.text
-
-                    raise ApiError(resp.status_code, error_message)
+                self.client.post(f"{API_URL}/tasks/", files=data)
             return self
 
         # TODO: sub-batches.
@@ -208,13 +196,17 @@ class Taskframe(object):
                 for item, custom_id, label in self.dataset
             ]
         }
-        self.session.post(f"{API_URL}/tasks/", json=data)
+        resp = self.client.post(
+            f"{API_URL}/tasks/", params={"taskframe_id": self.id}, json=data
+        )
         return self
 
-    def set_training_requirement(self, required_score):
-        resp = self.session.post(
+    def set_training_requirement(
+        self, required_score=0.8,
+    ):
+        resp = self.client.post(
             f"{API_URL}/taskframes/{self.id}/set_training_requirement/",
-            data={"required_score": required_score},
+            data={"required_score": required_score,},
         )
         return self
 
