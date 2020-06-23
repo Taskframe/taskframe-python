@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 import random
@@ -42,6 +43,7 @@ class Taskframe(object):
         self.name = name
         self.id = id
         self.client = Client()
+        self.dataset = None
 
     def preview(self):
         tf_message = {"type": "set_taskframe", "data": self.to_dict()}
@@ -54,7 +56,6 @@ class Taskframe(object):
             task_message = json.dumps({"type": "set_task", "data": serialized_item})
         css_id = str(int(random.random() * 10000))
         html = f"""
-        <iiimg src="{serialized_item['input_url']}"/>
         <iframe id="frame_{css_id}" src="https://localhost:3000/embed/preview" frameBorder=0 style="width: 100%; height: 600px;"></iframe>
         <script>
         (function(){{
@@ -180,7 +181,6 @@ class Taskframe(object):
         # INPUT_TYPE_FILE doesnt support batches, post items one by one.
         if self.dataset.input_type == Dataset.INPUT_TYPE_FILE:
             for item, custom_id, label in self.dataset:
-
                 data = self.dataset.serialize_item(
                     item, self.id, custom_id=custom_id, label=label
                 )
@@ -209,6 +209,44 @@ class Taskframe(object):
             data={"required_score": required_score,},
         )
         return self
+
+    def get_tasks(self):
+        resp = self.client.get(f"{API_URL}/tasks/?taskframe_id={self.id}&no_page=1",)
+        return resp.json()
+
+    def to_dataframe(self):
+        tasks = self.get_tasks()
+        import pandas
+
+        return pandas.DataFrame(tasks)
+
+    def merge_to_dataframe(self, dataframe, custom_id_column):
+        answer_dataframe = self.to_dataframe()
+        output_columns = list(dataframe.columns) + ["answer"]
+        return dataframe.merge(
+            answer_dataframe, left_on=custom_id_column, right_on="custom_id"
+        )[output_columns]
+
+    def to_csv(self, path):
+        tasks = self.get_tasks()
+        if not tasks:
+            raise ValueError("No data")
+        keys = [
+            "id",
+            "custom_id",
+            "taskframe_id",
+            "taskframe_name",
+            "input_data",
+            "input_file",
+            "input_url",
+            "input_type",
+            "status",
+            "answer",
+        ]
+        with open(path, "w") as output_file:
+            dict_writer = csv.DictWriter(output_file, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(tasks)
 
 
 def remove_none_values(obj):
