@@ -11,13 +11,7 @@ from .client import Client
 from .dataset import Dataset, Trainingset
 from .utils import is_url
 
-API_ENDPOINT = os.environ.get("TASKFRAME_API_ENDPOINT", "https://api.taskframe.ai")
-
 APP_ENDPOINT = os.environ.get("TASKFRAME_APP_ENDPOINT", "https://app.taskframe.ai")
-
-API_VERSION = os.environ.get("TASKFRAME_API_VERSION", "v1")
-
-API_URL = f"{API_ENDPOINT}/api/{API_VERSION}"
 
 
 class CustomIdsMismatch(Exception):
@@ -32,8 +26,8 @@ class Taskframe(object):
         task_type=None,
         output_schema=None,
         instruction="",
-        instruction_details=None,
-        name=None,
+        instruction_details="",
+        name="",
         id=None,
         **kwargs,
     ):
@@ -76,7 +70,7 @@ class Taskframe(object):
         }
 
     def fetch(self):
-        response = self.client.get(f"{API_URL}/taskframes/{self.id}/")
+        response = self.client.get(f"/taskframes/{self.id}/")
         return response.json()
 
     def progress(self):
@@ -104,10 +98,12 @@ class Taskframe(object):
             )
 
     def update(self):
-        self.client.put(f"{API_URL}/taskframes/{self.id}", json=self.to_dict())
+        self.client.put(f"/taskframes/{self.id}/", json=self.to_dict())
 
     def create(self):
-        self.client.post(f"{API_URL}/taskframes/", json=self.to_dict())
+        resp = self.client.post(f"/taskframes/", json=self.to_dict())
+        self.id = resp.json()["id"]
+        print(f"created taskframe of id: {self.id}")
 
     def add_dataset_from_list(
         self, items, input_type=None, custom_ids=None, labels=None
@@ -170,7 +166,7 @@ class Taskframe(object):
                 data = dataset.serialize_item(
                     item, self.id, custom_id=custom_id, label=label
                 )
-                self.client.post(f"{API_URL}/tasks/", files=data)
+                self.client.post(f"/tasks/", files=data)
 
             return
 
@@ -181,20 +177,18 @@ class Taskframe(object):
                 for item, custom_id, label in dataset
             ]
         }
-        resp = self.client.post(
-            f"{API_URL}/tasks/", params={"taskframe_id": self.id}, json=data
-        )
+        resp = self.client.post(f"/tasks/", params={"taskframe_id": self.id}, json=data)
 
     def submit_training_requirement(
         self, required_score=0.9,
     ):
         resp = self.client.post(
-            f"{API_URL}/taskframes/{self.id}/set_training_requirement/",
+            f"/taskframes/{self.id}/set_training_requirement/",
             data={"required_score": required_score,},
         )
 
     def fetch_tasks(self):
-        resp = self.client.get(f"{API_URL}/tasks/?taskframe_id={self.id}&no_page=1",)
+        resp = self.client.get(f"/tasks/?taskframe_id={self.id}&no_page=1",)
         return resp.json()
 
     def to_dataframe(self):
@@ -246,20 +240,15 @@ class Taskframe(object):
         for member in self.team:
             existing_member = find_in_dicts(existing_team, "email", member["email"])
             if not existing_member:
-                resp = self.client.post(
-                    f"{API_URL}/taskframes/{self.id}/users/", member
-                )
+                resp = self.client.post(f"/taskframes/{self.id}/users/", member)
                 continue
             if existing_member["role"] != member["role"]:
                 resp = self.client.put(
-                    f"{API_URL}/taskframes/{self.id}/users/{existing_member['id']}/",
-                    member,
+                    f"/taskframes/{self.id}/users/{existing_member['id']}/", member,
                 )
 
     def fetch_team(self):
-        return self.client.get(
-            f"{API_URL}/taskframes/{self.id}/users/?no_page=1"
-        ).json()
+        return self.client.get(f"/taskframes/{self.id}/users/?no_page=1").json()
 
     def preview(self):
         tf_message = {"type": "set_taskframe", "data": self.to_dict()}

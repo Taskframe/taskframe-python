@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 import taskframe
+from taskframe.client import API_URL
 from taskframe.dataset import CustomIdsLengthMismatch
 
 
@@ -27,7 +28,7 @@ class TestClass:
         with patch("taskframe.dataset.open_file", custom_mock_open) as m_open:
             cls.calls = [
                 call(
-                    f"{taskframe.API_URL}/tasks/",
+                    f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
                         "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
@@ -37,7 +38,7 @@ class TestClass:
                     },
                 ),
                 call(
-                    f"{taskframe.API_URL}/tasks/",
+                    f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
                         "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
@@ -51,7 +52,7 @@ class TestClass:
 
             cls.calls_str_custom_id = [
                 call(
-                    f"{taskframe.API_URL}/tasks/",
+                    f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
                         "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
@@ -61,7 +62,7 @@ class TestClass:
                     },
                 ),
                 call(
-                    f"{taskframe.API_URL}/tasks/",
+                    f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
                         "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
@@ -75,7 +76,7 @@ class TestClass:
 
         cls.calls_str_custom_id = [
             call(
-                f"{taskframe.API_URL}/tasks/",
+                f"{API_URL}/tasks/",
                 files={
                     "taskframe_id": (None, cls.tf.id),
                     "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
@@ -85,7 +86,7 @@ class TestClass:
                 },
             ),
             call(
-                f"{taskframe.API_URL}/tasks/",
+                f"{API_URL}/tasks/",
                 files={
                     "taskframe_id": (None, cls.tf.id),
                     "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
@@ -126,7 +127,7 @@ class TestClass:
         data = self.tf.fetch()
 
         self.tf.client.session.get.assert_called_with(
-            f"{taskframe.API_URL}/taskframes/{self.tf.id}/"
+            f"{API_URL}/taskframes/{self.tf.id}/"
         )
 
     @patch("taskframe.dataset.open_file", custom_mock_open)
@@ -146,7 +147,7 @@ class TestClass:
         self.tf.submit()
 
         self.tf.client.session.post.assert_called_with(
-            f"{taskframe.API_URL}/tasks/",
+            f"{API_URL}/tasks/",
             files={
                 "taskframe_id": (None, self.tf.id),
                 "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
@@ -202,7 +203,7 @@ class TestClass:
         self.tf.submit()
 
         self.tf.client.session.post.assert_called_with(
-            f"{taskframe.API_URL}/tasks/",
+            f"{API_URL}/tasks/",
             files={
                 "taskframe_id": (None, self.tf.id),
                 "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
@@ -231,7 +232,7 @@ class TestClass:
 
         self.tf.submit()
         self.tf.client.session.post.assert_called_with(
-            f"{taskframe.API_URL}/tasks/",
+            f"{API_URL}/tasks/",
             json=self.urls_json_data,
             params={"taskframe_id": self.tf.id},
         )
@@ -248,7 +249,7 @@ class TestClass:
 
         self.tf.submit()
         self.tf.client.session.post.assert_called_with(
-            f"{taskframe.API_URL}/tasks/",
+            f"{API_URL}/tasks/",
             json=self.urls_json_data,
             params={"taskframe_id": self.tf.id},
         )
@@ -262,7 +263,7 @@ class TestClass:
 
         self.tf.submit()
         self.tf.client.session.post.assert_called_with(
-            f"{taskframe.API_URL}/tasks/",
+            f"{API_URL}/tasks/",
             json=self.urls_json_data,
             params={"taskframe_id": self.tf.id},
         )

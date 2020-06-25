@@ -6,5 +6,5 @@ Taskframe.ai is currently in private beta, please contact us to request an invit
 
 ## Useful links
 
-* [Notebook Tutorial](docs/Tutorial.ipynb)
+* [Notebook Demo](docs/Demo.ipynb)
 * [Documentation](docs/Documentation.md)

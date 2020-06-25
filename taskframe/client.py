@@ -1,4 +1,10 @@
+import os
+
 import requests
+
+API_ENDPOINT = os.environ.get("TASKFRAME_API_ENDPOINT", "https://api.taskframe.ai")
+API_VERSION = os.environ.get("TASKFRAME_API_VERSION", "v1")
+API_URL = f"{API_ENDPOINT}/api/{API_VERSION}"
 
 
 class ApiError(Exception):
@@ -29,8 +35,9 @@ class Client(object):
     def post(self, *args, **kwargs):
         return self._send_request("post", *args, **kwargs)
 
-    def _send_request(self, method, *args, **kwargs):
-        response = getattr(self.session, method)(*args, **kwargs)
+    def _send_request(self, method, url, *args, **kwargs):
+        url = f"{API_URL}{url}"
+        response = getattr(self.session, method)(url, *args, **kwargs)
         if response.status_code >= 400:
             error_message = response.text
             raise ApiError(response.status_code, error_message)
