@@ -81,6 +81,19 @@ class Dataset(object):
         return self[idx]
 
     @classmethod
+    def get_dataset_class(cls, input_type):
+        dataset_class_map = {
+            "url": UrlDataset,
+            "file": FileDataset,
+            "data": DataDataset,
+        }
+        if input_type not in dataset_class_map.keys():
+            raise ValueError(
+                f'input type should be in {", ".join(dataset_class_map.keys())}'
+            )
+        return dataset_class_map[input_type]
+
+    @classmethod
     def from_list(
         cls, items, input_type=None, custom_ids=None, labels=None, base_path=None
     ):
@@ -95,20 +108,6 @@ class Dataset(object):
         return cls.get_dataset_class(input_type)(
             items, custom_ids=custom_ids, labels=labels, base_path=base_path
         )
-
-    @classmethod
-    def get_dataset_class(cls, input_type):
-        dataset_class_map = {
-            "url": UrlDataset,
-            "file": FileDataset,
-            "data": DataDataset,
-        }
-
-        if input_type not in dataset_class_map.keys():
-            raise ValueError(
-                f'input type should be in {", ".join(dataset_class_map.keys())}'
-            )
-        return dataset_class_map[input_type]
 
     @classmethod
     def from_folder(
@@ -178,14 +177,12 @@ class Dataset(object):
         label_column=None,
     ):
         base_path = Path(base_path) if base_path else Path()
-
         dataframe = dataframe.fillna("")
 
         if not column:
             column = dataframe.columns[0]
 
         first_item = dataframe[column][0]
-
         input_type = input_type or guess_input_type(first_item, base_path)
 
         dataset = dataframe[column]
@@ -316,3 +313,29 @@ class DataDataset(Dataset):
 
     def sanity_check_item(self, item):
         pass  # TODO: check that item matches input_type.
+
+
+class Trainingset(Dataset):
+    @classmethod
+    def from_list(cls, *args, required_score=0.9, **kwargs):
+        instance = super().from_list(*args, **kwargs)
+        instance.required_score = required_score
+        return instance
+
+    @classmethod
+    def from_folder(cls, *args, required_score=0.9, **kwargs):
+        instance = super().from_folder(*args, **kwargs)
+        instance.required_score = required_score
+        return instance
+
+    @classmethod
+    def from_csv(cls, *args, required_score=0.9, **kwargs):
+        instance = super().from_csv(*args, **kwargs)
+        instance.required_score = required_score
+        return instance
+
+    @classmethod
+    def from_dataframe(cls, *args, required_score=0.9, **kwargs):
+        instance = super().from_dataframe(*args, **kwargs)
+        instance.required_score = required_score
+        return instance

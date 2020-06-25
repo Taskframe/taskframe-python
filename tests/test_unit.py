@@ -122,8 +122,8 @@ class TestClass:
             ]
         }
 
-    def test_sync(self):
-        data = self.tf.sync()
+    def test_fetch(self):
+        data = self.tf.fetch()
 
         self.tf.client.session.get.assert_called_with(
             f"{taskframe.API_URL}/taskframes/{self.tf.id}/"

@@ -8,10 +8,13 @@ import requests
 from IPython.display import HTML, Javascript, display
 
 from .client import Client
-from .dataset import Dataset
+from .dataset import Dataset, Trainingset
 from .utils import is_url
 
 API_ENDPOINT = os.environ.get("TASKFRAME_API_ENDPOINT", "https://api.taskframe.ai")
+
+APP_ENDPOINT = os.environ.get("TASKFRAME_APP_ENDPOINT", "https://app.taskframe.ai")
+
 API_VERSION = os.environ.get("TASKFRAME_API_VERSION", "v1")
 
 API_URL = f"{API_ENDPOINT}/api/{API_VERSION}"
@@ -27,16 +30,15 @@ class Taskframe(object):
         self,
         data_type=None,
         task_type=None,
-        classes=None,
         output_schema=None,
         instruction="",
         instruction_details=None,
         name=None,
         id=None,
+        **kwargs,
     ):
         self.data_type = data_type
         self.task_type = task_type
-        self.classes = classes
         self.output_schema = output_schema
         self.instruction = instruction
         self.instruction_details = instruction_details
@@ -44,37 +46,10 @@ class Taskframe(object):
         self.id = id
         self.client = Client()
         self.dataset = None
-
-    def preview(self):
-        tf_message = {"type": "set_taskframe", "data": self.to_dict()}
-
-        task_message = {}
-        if self.dataset and len(self.dataset):
-            item, _, _ = self.dataset.get_random()
-            serialized_item = self.dataset.serialize_item_preview(item, self.id)
-
-            task_message = json.dumps({"type": "set_task", "data": serialized_item})
-        css_id = str(int(random.random() * 10000))
-        html = f"""
-        <iframe id="frame_{css_id}" src="https://localhost:3000/embed/preview" frameBorder=0 style="width: 100%; height: 600px;"></iframe>
-        <script>
-        (function(){{
-            console.log('$$$$', {task_message});
-            var $iframe = document.querySelector('#frame_{css_id}');
-            var init = false;
-            postMessageHandler = function(e) {{
-                if (e.source !==  $iframe.contentWindow || e.data !== 'ready' || init) return;
-                $iframe.contentWindow.postMessage('{json.dumps(tf_message)}', '*');
-                $iframe.contentWindow.postMessage('{task_message}', '*');
-
-                init = true;
-            }}
-            window.removeEventListener('message', postMessageHandler);
-            window.addEventListener('message', postMessageHandler);
-        }})()
-        </script>
-        """
-        return display(HTML(html))
+        self.trainingset = None
+        self.workers = []
+        self.reviewers = []
+        self.kwargs = kwargs
 
     def to_dict(self):
         return {
@@ -91,15 +66,28 @@ class Taskframe(object):
             "mode": "inhouse",
         }
 
-    def serialize_params(self):
-        params = {}
-        if self.classes:
-            params["classes"] = self.classes
-        return params
+    acceptable_task_params = ["classes", "tags", "multiple", "files_accepted"]
 
-    def sync(self):
+    def serialize_params(self):
+        return {
+            k: self.kwargs.get(k)
+            for k in self.acceptable_task_params
+            if self.kwargs.get(k)
+        }
+
+    def fetch(self):
         response = self.client.get(f"{API_URL}/taskframes/{self.id}/")
         return response.json()
+
+    def progress(self):
+        data = self.fetch()
+
+        return {
+            "num_tasks": data.get("num_tasks"),
+            "num_pending_work": data.get("num_pending_work"),
+            "num_pending_review": data.get("num_pending_review"),
+            "num_finished": data.get("num_pending_review"),
+        }
 
     def submit(self):
         if self.id:
@@ -108,9 +96,12 @@ class Taskframe(object):
             self.create()
 
         if self.dataset is not None:
-            self.submit_dataset()
-
-        return self
+            self.submit_dataset(self.dataset)
+        if self.trainingset is not None:
+            self.submit_dataset(self.trainingset)
+            self.submit_training_requirement(
+                required_score=self.trainingset.required_score
+            )
 
     def update(self):
         self.client.put(f"{API_URL}/taskframes/{self.id}", json=self.to_dict())
@@ -124,7 +115,6 @@ class Taskframe(object):
         self.dataset = Dataset.from_list(
             items, input_type=input_type, custom_ids=custom_ids, labels=labels
         )
-        return self
 
     def add_dataset_from_folder(
         self, path, custom_ids=None, labels=None, recursive=False, pattern="*"
@@ -136,8 +126,6 @@ class Taskframe(object):
             recursive=recursive,
             pattern=pattern,
         )
-
-        return self
 
     def add_dataset_from_csv(
         self,
@@ -156,7 +144,6 @@ class Taskframe(object):
             custom_id_column=custom_id_column,
             label_column=label_column,
         )
-        return self
 
     def add_dataset_from_dataframe(
         self,
@@ -175,47 +162,43 @@ class Taskframe(object):
             custom_id_column=custom_id_column,
             label_column=label_column,
         )
-        return self
 
-    def submit_dataset(self):
+    def submit_dataset(self, dataset):
         # INPUT_TYPE_FILE doesnt support batches, post items one by one.
-        if self.dataset.input_type == Dataset.INPUT_TYPE_FILE:
-            for item, custom_id, label in self.dataset:
-                data = self.dataset.serialize_item(
+        if dataset.input_type == Dataset.INPUT_TYPE_FILE:
+            for item, custom_id, label in dataset:
+                data = dataset.serialize_item(
                     item, self.id, custom_id=custom_id, label=label
                 )
                 self.client.post(f"{API_URL}/tasks/", files=data)
-            return self
+
+            return
 
         # TODO: sub-batches.
         data = {
             "items": [
-                self.dataset.serialize_item(
-                    item, self.id, custom_id=custom_id, label=label
-                )
-                for item, custom_id, label in self.dataset
+                dataset.serialize_item(item, self.id, custom_id=custom_id, label=label)
+                for item, custom_id, label in dataset
             ]
         }
         resp = self.client.post(
             f"{API_URL}/tasks/", params={"taskframe_id": self.id}, json=data
         )
-        return self
 
-    def set_training_requirement(
-        self, required_score=0.8,
+    def submit_training_requirement(
+        self, required_score=0.9,
     ):
         resp = self.client.post(
             f"{API_URL}/taskframes/{self.id}/set_training_requirement/",
             data={"required_score": required_score,},
         )
-        return self
 
-    def get_tasks(self):
+    def fetch_tasks(self):
         resp = self.client.get(f"{API_URL}/tasks/?taskframe_id={self.id}&no_page=1",)
         return resp.json()
 
     def to_dataframe(self):
-        tasks = self.get_tasks()
+        tasks = self.fetch_tasks()
         import pandas
 
         return pandas.DataFrame(tasks)
@@ -228,7 +211,7 @@ class Taskframe(object):
         )[output_columns]
 
     def to_csv(self, path):
-        tasks = self.get_tasks()
+        tasks = self.fetch_tasks()
         if not tasks:
             raise ValueError("No data")
         keys = [
@@ -248,6 +231,68 @@ class Taskframe(object):
             dict_writer.writeheader()
             dict_writer.writerows(tasks)
 
+    def add_team(self, workers, reviewers=[]):
+        self.team = []
+        workers = set(workers)
+        reviewers = set(reviewers)
+        if workers.intersection(reviewers):
+            raise ValueError("team members can't be both reviewer and worker")
+        self.team.extend([{"role": "Worker", "email": x} for x in workers])
+        self.team.extend([{"role": "Reviewer", "email": x} for x in reviewers])
 
-def remove_none_values(obj):
-    return {k: v for k, v in obj.items() if v is not None}
+    def submit_team(self):
+        existing_team = self.fetch_team()
+        existing_emails = [x["email"] for x in existing_team]
+        for member in self.team:
+            existing_member = find_in_dicts(existing_team, "email", member["email"])
+            if not existing_member:
+                resp = self.client.post(
+                    f"{API_URL}/taskframes/{self.id}/users/", member
+                )
+                continue
+            if existing_member["role"] != member["role"]:
+                resp = self.client.put(
+                    f"{API_URL}/taskframes/{self.id}/users/{existing_member['id']}/",
+                    member,
+                )
+
+    def fetch_team(self):
+        return self.client.get(
+            f"{API_URL}/taskframes/{self.id}/users/?no_page=1"
+        ).json()
+
+    def preview(self):
+        tf_message = {"type": "set_taskframe", "data": self.to_dict()}
+
+        task_message = {}
+        if self.dataset and len(self.dataset):
+            item, _, _ = self.dataset.get_random()
+            serialized_item = self.dataset.serialize_item_preview(item, self.id)
+
+            task_message = json.dumps({"type": "set_task", "data": serialized_item})
+        css_id = str(int(random.random() * 10000))
+        html = f"""
+            <iframe id="frame_{css_id}" src="{APP_ENDPOINT}/embed/preview" frameBorder=0 style="width: 100%; height: 600px;"></iframe>
+            <script>
+            (function(){{
+                var $iframe = document.querySelector('#frame_{css_id}');
+                var init = false;
+                postMessageHandler = function(e) {{
+                    if (e.source !==  $iframe.contentWindow || e.data !== 'ready' || init) return;
+                    $iframe.contentWindow.postMessage('{json.dumps(tf_message)}', '*');
+                    $iframe.contentWindow.postMessage('{task_message}', '*');
+                    init = true;
+                }}
+                window.removeEventListener('message', postMessageHandler);
+                window.addEventListener('message', postMessageHandler);
+            }})()
+            </script>
+            """
+        return display(HTML(html))
+
+
+def find_in_dicts(items, key, value):
+    try:
+        return next(x for x in items if value in x.get(key) == value)
+    except StopIteration:
+        return None
