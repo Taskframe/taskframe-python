@@ -21,19 +21,24 @@ __init__(
 
 Parameters:
 
-* `data_type`: Type of input data. Possible values : `image`, `text`, `html`, `pdf`.
+* `data_type`: Type of input data. Possible values : `image`, `text`, `audio`, `html`, `iframe`.
 * `task_type`: Type of predefined tasks (depending on the `data_type`):
   * `classification`: you may pass additional parameters:
     * `classes`: list of single-class options
     * `tags`: list of multi-class options
   * `text`: for transcription, text entry, sequence-to-sequence, etc. The annotator will have to fill a free text area.
-  * `bounding_box`, `polygon`, `point`: for image annotations
+  * `bounding_box`, `polygon`, `point`: for image annotations. Extra parameters:
+    * `classes`: list of single-class options
+    * `tags`: list of multi-class options
+  * `ner`: Named Entity Recognition (for `text` data). Extra parameters:
+    * `classes`: list of single-class options
+  * `audio_annotation`: Regions annotations (for `audio` data). Extra parameters:
+    * `classes`: list of single-class options
   * `file_upload`: the annotator will have to upload a file(s) (experimental support for small files only). Extra parameters:
     * `multiple`: Boolean, whether multiple files are allowed
     * `files_accepted`: list of file extensions allowed, e.g. `[".jpg", ".png"]`. for all image formats simple pass `["image"]`
-  * `custom`: Custom task based on a JSON Schema, Related parameters:
+  * `custom`: Custom task based on a JSON Schema, Extra parameters:
     * `output_schema`: a valid JSON Schema
-
   * `name`: the name that will appear in the platform list views (optional)
   * `instruction`: 1 line instruction that appears on top of the worker interface
   * `instruction_detail`: Free HTML section that will appear at the bottom of the worker interface. Allows safe HTML tags (`p`, `img`, etc.)
