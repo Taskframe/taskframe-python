@@ -29,6 +29,8 @@ class Taskframe(object):
         instruction_details="",
         name="",
         id=None,
+        review=True,
+        redundancy=1,
         **kwargs,
     ):
         self.data_type = data_type
@@ -41,6 +43,8 @@ class Taskframe(object):
         self.client = Client()
         self.dataset = None
         self.trainingset = None
+        self.review = review
+        self.redundancy = redundancy
         self.workers = []
         self.reviewers = []
         self.kwargs = kwargs
@@ -58,6 +62,8 @@ class Taskframe(object):
             "instruction": self.instruction,
             "instruction_details": self.instruction_details,
             "mode": "inhouse",
+            "redundancy": self.redundancy,
+            "requires_review": self.review,
         }
 
     acceptable_task_params = ["classes", "tags", "multiple", "files_accepted"]
@@ -72,6 +78,26 @@ class Taskframe(object):
     def fetch(self):
         response = self.client.get(f"/taskframes/{self.id}/")
         return response.json()
+
+    @classmethod
+    def retrieve(cls, id):
+        client = Client()
+        data = client.get(f"/taskframes/{id}/").json()
+        return cls(
+            data_type=data["data_type"],
+            task_type=data["task_type"],
+            output_schema=data["output_schema"],
+            instruction=data["instruction"],
+            instruction_details=data["instruction_details"],
+            name=data["name"],
+            id=id,
+            classes=data["params"].get("classes"),
+            tags=data["params"].get("tags"),
+            multiple=data["params"].get("multiple"),
+            files_accepted=data["params"].get("files_accepted"),
+            redundancy=data["redundancy"],
+            review=data["requires_review"],
+        )
 
     def progress(self):
         data = self.fetch()
@@ -199,7 +225,7 @@ class Taskframe(object):
 
     def merge_to_dataframe(self, dataframe, custom_id_column):
         answer_dataframe = self.to_dataframe()
-        output_columns = list(dataframe.columns) + ["answer"]
+        output_columns = list(dataframe.columns) + ["label"]
         return dataframe.merge(
             answer_dataframe, left_on=custom_id_column, right_on="custom_id"
         )[output_columns]
@@ -218,7 +244,7 @@ class Taskframe(object):
             "input_url",
             "input_type",
             "status",
-            "answer",
+            "label",
         ]
         with open(path, "w") as output_file:
             dict_writer = csv.DictWriter(output_file, keys)

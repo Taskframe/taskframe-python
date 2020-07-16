@@ -18,6 +18,8 @@ class ApiError(Exception):
 class Client(object):
     def __init__(self):
         self.session = self.create_session()
+        if os.environ.get("TASKFRAME_SSL_VERIFY") == "False":
+            self.session.verify = False
 
     def create_session(self):
         session = requests.Session()

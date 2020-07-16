@@ -250,7 +250,7 @@ class FileDataset(Dataset):
         if custom_id:
             data["custom_id"] = (None, custom_id)
         if label:
-            data["answer"] = (None, json.dumps(label))
+            data["label"] = (None, json.dumps(label))
 
         return data
 
@@ -266,7 +266,7 @@ class FileDataset(Dataset):
                 "custom_id": custom_id if custom_id else None,
                 "input_url": data_url,
                 "input_type": "url",
-                "answer": json.dumps(label) if label else None,
+                "label": json.dumps(label) if label else None,
                 "is_training": bool(label),
                 "taskframe_id": taskframe_id,
             }
@@ -283,7 +283,7 @@ class UrlDataset(Dataset):
                 "custom_id": custom_id if custom_id else None,
                 "input_url": item,
                 "input_type": self.input_type,
-                "answer": label if label else None,
+                "label": label if label else None,
                 "is_training": bool(label),
                 "taskframe_id": taskframe_id,
             }
@@ -305,7 +305,7 @@ class DataDataset(Dataset):
                 "custom_id": custom_id if custom_id else None,
                 "input_data": item,
                 "input_type": self.input_type,
-                "answer": label if label else None,
+                "label": label if label else None,
                 "is_training": bool(label),
                 "taskframe_id": taskframe_id,
             }

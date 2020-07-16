@@ -16,6 +16,8 @@ __init__(
     instruction_details=None,
     name=None,
     id=None,
+    redundancy=1,
+    review=True,
 )
 ```
 
@@ -43,6 +45,8 @@ Parameters:
   * `instruction`: 1 line instruction that appears on top of the worker interface
   * `instruction_detail`: Free HTML section that will appear at the bottom of the worker interface. Allows safe HTML tags (`p`, `img`, etc.)
   * `id`: if you have already created your Taskframe you can simply create a Taskframe instance with the id, then call methods described below to fetch results, etc.
+  * `redundancy`: Number of distinct workers who will perform each task
+  * `review`: If True, each task will have to be verified by a reviewer
 
 ### add_dataset_from_list
 

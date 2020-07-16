@@ -45,7 +45,7 @@ class TestClass:
                         "input_type": (None, "file"),
                         "custom_id": (None, 43),
                         "is_training": (None, True),
-                        "answer": (None, '"cat"'),
+                        "label": (None, '"cat"'),
                     },
                 ),
             ]
@@ -69,7 +69,7 @@ class TestClass:
                         "custom_id": (None, "bar"),
                         "input_type": (None, "file"),
                         "is_training": (None, True),
-                        "answer": (None, '"cat"'),
+                        "label": (None, '"cat"'),
                     },
                 ),
             ]
@@ -93,7 +93,7 @@ class TestClass:
                     "custom_id": (None, "bar"),
                     "input_type": (None, "file"),
                     "is_training": (None, True),
-                    "answer": (None, '"cat"'),
+                    "label": (None, '"cat"'),
                 },
             ),
         ]
@@ -118,7 +118,7 @@ class TestClass:
                     "input_url": "https://images.pexels.com/photos/104827/cat-pet-animal-domestic-104827.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
                     "is_training": True,
                     "input_type": "url",
-                    "answer": "cat",
+                    "label": "cat",
                 },
             ]
         }
@@ -154,7 +154,7 @@ class TestClass:
                 "input_type": (None, "file"),
                 "custom_id": (None, 43),
                 "is_training": (None, True),
-                "answer": (None, '"cat"'),
+                "label": (None, '"cat"'),
             },
         )
 
@@ -210,7 +210,7 @@ class TestClass:
                 "custom_id": (None, "bar"),
                 "input_type": (None, "file"),
                 "is_training": (None, True),
-                "answer": (None, '"cat"'),
+                "label": (None, '"cat"'),
             },
         )
 
