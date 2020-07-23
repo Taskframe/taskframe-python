@@ -3,9 +3,11 @@ import csv
 import json
 import mimetypes
 import random
+from datetime import datetime
 from pathlib import Path
 
-from .utils import is_url, remove_none_values
+from .client import Client
+from .utils import is_url, remove_empty_values
 
 mimetypes.init()
 
@@ -48,6 +50,11 @@ class LabelsLengthMismatch(Exception):
         super().__init__(message)
 
 
+class MissingLabelsMismatch(Exception):
+    def __init__(self, message="All labels should be defined"):
+        super().__init__(message)
+
+
 class Dataset(object):
 
     INPUT_TYPE_FILE = "file"
@@ -56,13 +63,20 @@ class Dataset(object):
 
     INPUT_TYPES = [INPUT_TYPE_FILE, INPUT_TYPE_URL, INPUT_TYPE_DATA]
 
-    def __init__(self, items, custom_ids=None, labels=None, **kwargs):
-        self.items = items
-        self.custom_ids = custom_ids or []
-        self.labels = labels or []
+    def __init__(self, items, ids=None, custom_ids=None, labels=None, **kwargs):
+
+        self.items = self.prepare_items(items, **kwargs)
+
+        self.sanity_check(self.items, custom_ids, labels)
 
         for item in self.items:
             self.sanity_check_item(item)
+
+        self.custom_ids = custom_ids or []
+        self.labels = labels or []
+        self.ids = ids or []
+
+        self.client = Client()
 
     def __len__(self):
         return len(self.items)
@@ -74,6 +88,7 @@ class Dataset(object):
             self.items[i],
             get_or_none(self.custom_ids, i),
             get_or_none(self.labels, i),
+            get_or_none(self.ids, i),
         )
 
     def get_random(self):
@@ -97,11 +112,6 @@ class Dataset(object):
     def from_list(
         cls, items, input_type=None, custom_ids=None, labels=None, base_path=None
     ):
-        if custom_ids and len(custom_ids) != len(items):
-            raise CustomIdsLengthMismatch()
-
-        if labels and len(labels) != len(items):
-            raise LabelsLengthMismatch()
 
         input_type = input_type or guess_input_type(next(iter(items)))
 
@@ -204,31 +214,52 @@ class Dataset(object):
     ):
         raise NotImplementedError()
 
+    def sanity_check(self, items, custom_ids, labels):
+        if custom_ids and len(custom_ids) != len(items):
+            raise CustomIdsLengthMismatch()
+
+        if labels and len(labels) != len(items):
+            raise LabelsLengthMismatch()
+
+    def prepare_items(self, items, **kwargs):
+        return items
+
     def sanity_check_item(self, item):
         raise NotImplementedError()
 
     def serialize_item_preview(self, *args, **kwargs):
         return self.serialize_item(*args, **kwargs)
 
+    def submit(self, taskframe_id):
+        data = {
+            "items": [
+                self.serialize_item(
+                    item, taskframe_id, custom_id=custom_id, label=label
+                )
+                for item, custom_id, label, _id in self
+            ]
+        }
+        resp = self.client.post(
+            f"/tasks/", params={"taskframe_id": taskframe_id}, json=data
+        )
+
+        resp_data = resp.json()
+
+        self.ids = [x["id"] for x in resp_data]
+        return
+
 
 class FileDataset(Dataset):
 
     input_type = "file"
-
     max_file_size = 50 * 1000 * 1000  # 50MB
 
-    def __init__(self, items, custom_ids=None, labels=None, base_path=None, **kwargs):
-        self.items = items
-        self.custom_ids = custom_ids or []
-        self.labels = labels or []
+    def prepare_items(self, items, base_path=None):
         base_path = Path(base_path) if base_path else None
-        needs_preprend = base_path and (base_path / Path(self.items[0])).exists()
-
+        needs_preprend = base_path and (base_path / Path(items[0])).exists()
         if needs_preprend:
-            self.items = [base_path / Path(item) for item in self.items]
-
-        for item in self.items:
-            self.sanity_check_item(item)
+            return [base_path / Path(item) for item in items]
+        return items
 
     def sanity_check_item(self, item):
         item = Path(item)
@@ -245,12 +276,11 @@ class FileDataset(Dataset):
             "taskframe_id": (None, taskframe_id),
             "input_file": (path.name, file_),
             "input_type": (None, self.input_type),
-            "is_training": (None, bool(label)),
         }
         if custom_id:
             data["custom_id"] = (None, custom_id)
         if label:
-            data["label"] = (None, json.dumps(label))
+            data["label"] = (None, label)
 
         return data
 
@@ -261,16 +291,27 @@ class FileDataset(Dataset):
         file_ = open(path, "rb")
         contents = file_.read()
         data_url = f"data:{mimetype};base64,{base64.b64encode(contents).decode()}"
-        return remove_none_values(
+        return remove_empty_values(
             {
-                "custom_id": custom_id if custom_id else None,
+                "custom_id": custom_id,
                 "input_url": data_url,
                 "input_type": "url",
-                "label": json.dumps(label) if label else None,
-                "is_training": bool(label),
+                "label": label,
                 "taskframe_id": taskframe_id,
             }
         )
+
+    def submit(self, taskframe_id):
+        # INPUT_TYPE_FILE doesnt support batches, post items one by one.
+        resp_data = []
+        for item, custom_id, label, _id in self:
+            data = self.serialize_item(
+                item, taskframe_id, custom_id=custom_id, label=label
+            )
+            resp = self.client.post(f"/tasks/", files=data)
+            resp_data.append(resp.json())
+        self.ids = [x["id"] for x in resp_data]
+        return
 
 
 class UrlDataset(Dataset):
@@ -278,13 +319,12 @@ class UrlDataset(Dataset):
     input_type = "url"
 
     def serialize_item(self, item, taskframe_id, custom_id=None, label=None):
-        return remove_none_values(
+        return remove_empty_values(
             {
-                "custom_id": custom_id if custom_id else None,
+                "custom_id": custom_id,
                 "input_url": item,
                 "input_type": self.input_type,
-                "label": label if label else None,
-                "is_training": bool(label),
+                "label": label,
                 "taskframe_id": taskframe_id,
             }
         )
@@ -300,13 +340,12 @@ class DataDataset(Dataset):
     input_type = "data"
 
     def serialize_item(self, item, taskframe_id, custom_id=None, label=None):
-        return remove_none_values(
+        return remove_empty_values(
             {
-                "custom_id": custom_id if custom_id else None,
+                "custom_id": custom_id,
                 "input_data": item,
                 "input_type": self.input_type,
-                "label": label if label else None,
-                "is_training": bool(label),
+                "label": label,
                 "taskframe_id": taskframe_id,
             }
         )
@@ -315,7 +354,50 @@ class DataDataset(Dataset):
         pass  # TODO: check that item matches input_type.
 
 
+class TrainingsetMixin(object):
+    is_training = True
+
+    def sanity_check(self, items, custom_ids, labels):
+        super().sanity_check(items, custom_ids, labels)
+
+        if not all(labels):
+            raise MissingLabelsMismatch()
+
+    def serialize_item(self, item, taskframe_id, custom_id=None, label=None):
+        resp = super().serialize_item(
+            item, taskframe_id, custom_id=custom_id, label=label
+        )
+        if self.input_type == "file":
+            resp["is_training"] = (None, True)
+        else:
+            resp["is_training"] = True
+        return resp
+
+
+class UrlTrainingSet(TrainingsetMixin, UrlDataset):
+    pass
+
+
+class FileTrainingSet(TrainingsetMixin, FileDataset):
+    pass
+
+
+class DataTrainingSet(TrainingsetMixin, DataDataset):
+    pass
+
+
 class Trainingset(Dataset):
+    @classmethod
+    def get_dataset_class(cls, input_type):
+        class_map = {
+            "url": UrlTrainingSet,
+            "file": FileTrainingSet,
+            "data": DataTrainingSet,
+        }
+        if input_type not in class_map.keys():
+            raise ValueError(f'input type should be in {", ".join(class_map.keys())}')
+        return class_map[input_type]
+
     @classmethod
     def from_list(cls, *args, required_score=0.9, **kwargs):
         instance = super().from_list(*args, **kwargs)

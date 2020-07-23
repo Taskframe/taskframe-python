@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 
 import taskframe
-from taskframe.client import API_URL
-from taskframe.dataset import CustomIdsLengthMismatch
+from taskframe.client import API_URL, Client
+from taskframe.dataset import CustomIdsLengthMismatch, MissingLabelsMismatch
 
 
 def mock_open_func(filename, *args, **kwargs):
@@ -17,14 +17,20 @@ custom_mock_open = mock_open()
 custom_mock_open.side_effect = mock_open_func
 
 
+def mock_client():
+    client = Client()
+    client.session = MagicMock()
+    client.session.post.return_value.status_code = 200
+    client.session.get.return_value.status_code = 200
+    client.session.put.return_value.status_code = 200
+    return client
+
+
 class TestClass:
     @classmethod
     def setup_class(cls):
         cls.tf = taskframe.Taskframe(id="dummy_id")
-        cls.tf.client.session = MagicMock()
-        cls.tf.client.session.post.return_value.status_code = 200
-        cls.tf.client.session.get.return_value.status_code = 200
-        cls.tf.client.session.put.return_value.status_code = 200
+        cls.tf.client = mock_client()
         with patch("taskframe.dataset.open_file", custom_mock_open) as m_open:
             cls.calls = [
                 call(
@@ -34,7 +40,6 @@ class TestClass:
                         "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
                         "custom_id": (None, 42),
                         "input_type": (None, "file"),
-                        "is_training": (None, False),
                     },
                 ),
                 call(
@@ -44,8 +49,7 @@ class TestClass:
                         "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
                         "input_type": (None, "file"),
                         "custom_id": (None, 43),
-                        "is_training": (None, True),
-                        "label": (None, '"cat"'),
+                        "label": (None, "cat"),
                     },
                 ),
             ]
@@ -58,7 +62,6 @@ class TestClass:
                         "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
                         "input_type": (None, "file"),
                         "custom_id": (None, "foo"),
-                        "is_training": (None, False),
                     },
                 ),
                 call(
@@ -68,35 +71,35 @@ class TestClass:
                         "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
                         "custom_id": (None, "bar"),
                         "input_type": (None, "file"),
-                        "is_training": (None, True),
-                        "label": (None, '"cat"'),
+                        "label": (None, "cat"),
                     },
                 ),
             ]
 
-        cls.calls_str_custom_id = [
-            call(
-                f"{API_URL}/tasks/",
-                files={
-                    "taskframe_id": (None, cls.tf.id),
-                    "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
-                    "input_type": (None, "file"),
-                    "custom_id": (None, "foo"),
-                    "is_training": (None, False),
-                },
-            ),
-            call(
-                f"{API_URL}/tasks/",
-                files={
-                    "taskframe_id": (None, cls.tf.id),
-                    "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
-                    "custom_id": (None, "bar"),
-                    "input_type": (None, "file"),
-                    "is_training": (None, True),
-                    "label": (None, '"cat"'),
-                },
-            ),
-        ]
+            cls.training_calls = [
+                call(
+                    f"{API_URL}/tasks/",
+                    files={
+                        "taskframe_id": (None, cls.tf.id),
+                        "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
+                        "custom_id": (None, 42),
+                        "input_type": (None, "file"),
+                        "label": (None, "dog"),
+                        "is_training": (None, True),
+                    },
+                ),
+                call(
+                    f"{API_URL}/tasks/",
+                    files={
+                        "taskframe_id": (None, cls.tf.id),
+                        "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
+                        "input_type": (None, "file"),
+                        "custom_id": (None, 43),
+                        "label": (None, "cat"),
+                        "is_training": (None, True),
+                    },
+                ),
+            ]
 
         cls.urls = [
             "https://i.dailymail.co.uk/1s/2019/11/23/09/21370544-0-image-a-4_1574501241272.jpg",
@@ -110,13 +113,11 @@ class TestClass:
                     "custom_id": "fizz",
                     "input_url": "https://i.dailymail.co.uk/1s/2019/11/23/09/21370544-0-image-a-4_1574501241272.jpg",
                     "input_type": "url",
-                    "is_training": False,
                 },
                 {
                     "taskframe_id": cls.tf.id,
                     "custom_id": "buzz",
                     "input_url": "https://images.pexels.com/photos/104827/cat-pet-animal-domestic-104827.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-                    "is_training": True,
                     "input_type": "url",
                     "label": "cat",
                 },
@@ -144,21 +145,22 @@ class TestClass:
             labels=[None, "cat"],
         )
 
+        self.tf.dataset.client = mock_client()
+
         self.tf.submit()
 
-        self.tf.client.session.post.assert_called_with(
+        self.tf.dataset.client.session.post.assert_called_with(
             f"{API_URL}/tasks/",
             files={
                 "taskframe_id": (None, self.tf.id),
                 "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
                 "input_type": (None, "file"),
                 "custom_id": (None, 43),
-                "is_training": (None, True),
-                "label": (None, '"cat"'),
+                "label": (None, "cat"),
             },
         )
 
-        self.tf.client.session.post.assert_has_calls(self.calls, any_order=True)
+        self.tf.dataset.client.session.post.assert_has_calls(self.calls, any_order=True)
 
     @patch("taskframe.dataset.open_file", custom_mock_open)
     def test_add_from_folder(self):
@@ -168,8 +170,10 @@ class TestClass:
 
         assert len(self.tf.dataset) == 2
 
+        self.tf.dataset.client = mock_client()
+
         self.tf.submit()
-        self.tf.client.session.post.assert_has_calls(self.calls, any_order=True)
+        self.tf.dataset.client.session.post.assert_has_calls(self.calls, any_order=True)
 
     @patch("taskframe.dataset.open_file", custom_mock_open)
     def test_add_from_folder_recursive(self):
@@ -185,8 +189,10 @@ class TestClass:
             custom_id_column="identifier",
             label_column="label",
         )
+
+        self.tf.dataset.client = mock_client()
         self.tf.submit()
-        self.tf.client.session.post.assert_has_calls(
+        self.tf.dataset.client.session.post.assert_has_calls(
             self.calls_str_custom_id, any_order=True
         )
 
@@ -200,21 +206,22 @@ class TestClass:
             custom_id_column="identifier",
             label_column="label",
         )
+        self.tf.dataset.client = mock_client()
+
         self.tf.submit()
 
-        self.tf.client.session.post.assert_called_with(
+        self.tf.dataset.client.session.post.assert_called_with(
             f"{API_URL}/tasks/",
             files={
                 "taskframe_id": (None, self.tf.id),
                 "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
                 "custom_id": (None, "bar"),
                 "input_type": (None, "file"),
-                "is_training": (None, True),
-                "label": (None, '"cat"'),
+                "label": (None, "cat"),
             },
         )
 
-        self.tf.client.session.post.assert_has_calls(
+        self.tf.dataset.client.session.post.assert_has_calls(
             self.calls_str_custom_id, any_order=True
         )
 
@@ -229,9 +236,9 @@ class TestClass:
         self.tf.add_dataset_from_list(
             self.urls, custom_ids=["fizz", "buzz"], labels=[None, "cat"]
         )
-
+        self.tf.dataset.client = mock_client()
         self.tf.submit()
-        self.tf.client.session.post.assert_called_with(
+        self.tf.dataset.client.session.post.assert_called_with(
             f"{API_URL}/tasks/",
             json=self.urls_json_data,
             params={"taskframe_id": self.tf.id},
@@ -246,9 +253,9 @@ class TestClass:
             custom_id_column="identifier",
             label_column="label",
         )
-
+        self.tf.dataset.client = mock_client()
         self.tf.submit()
-        self.tf.client.session.post.assert_called_with(
+        self.tf.dataset.client.session.post.assert_called_with(
             f"{API_URL}/tasks/",
             json=self.urls_json_data,
             params={"taskframe_id": self.tf.id},
@@ -260,10 +267,47 @@ class TestClass:
         self.tf.add_dataset_from_dataframe(
             dataframe, column="url", custom_id_column="identifier", label_column="label"
         )
-
+        self.tf.dataset.client = mock_client()
         self.tf.submit()
-        self.tf.client.session.post.assert_called_with(
+
+        self.tf.dataset.client.session.post.assert_called_with(
             f"{API_URL}/tasks/",
             json=self.urls_json_data,
             params={"taskframe_id": self.tf.id},
+        )
+
+    @patch("taskframe.dataset.open_file", custom_mock_open)
+    def test_add_training_from_list(self):
+
+        with pytest.raises(MissingLabelsMismatch) as exception:
+            self.tf.add_trainingset_from_list(
+                ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"],
+                custom_ids=[42, 43],
+                labels=[None, "cat"],
+            )
+
+        self.tf.add_trainingset_from_list(
+            ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"],
+            custom_ids=[42, 43],
+            labels=["dog", "cat"],
+            required_score=0.9,
+        )
+
+        self.tf.trainingset.client = mock_client()
+
+        self.tf.trainingset.submit(self.tf.id)
+
+        self.tf.trainingset.client.session.post.assert_called_with(
+            f"{API_URL}/tasks/",
+            files={
+                "taskframe_id": (None, self.tf.id),
+                "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
+                "input_type": (None, "file"),
+                "custom_id": (None, 43),
+                "is_training": (None, True),
+                "label": (None, "cat"),
+            },
+        )
+        self.tf.trainingset.client.session.post.assert_has_calls(
+            self.training_calls, any_order=True
         )

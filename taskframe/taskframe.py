@@ -114,11 +114,10 @@ class Taskframe(object):
             self.update()
         else:
             self.create()
-
         if self.dataset is not None:
-            self.submit_dataset(self.dataset)
+            self.dataset.submit(self.id)
         if self.trainingset is not None:
-            self.submit_dataset(self.trainingset)
+            self.trainingset.submit(self.id)
             self.submit_training_requirement(
                 required_score=self.trainingset.required_score
             )
@@ -185,25 +184,74 @@ class Taskframe(object):
             label_column=label_column,
         )
 
-    def submit_dataset(self, dataset):
-        # INPUT_TYPE_FILE doesnt support batches, post items one by one.
-        if dataset.input_type == Dataset.INPUT_TYPE_FILE:
-            for item, custom_id, label in dataset:
-                data = dataset.serialize_item(
-                    item, self.id, custom_id=custom_id, label=label
-                )
-                self.client.post(f"/tasks/", files=data)
+    def add_trainingset_from_list(
+        self, items, input_type=None, custom_ids=None, labels=None, required_score=0.9
+    ):
+        self.trainingset = Trainingset.from_list(
+            items,
+            input_type=input_type,
+            custom_ids=custom_ids,
+            labels=labels,
+            required_score=required_score,
+        )
 
-            return
+    def add_trainingset_from_folder(
+        self,
+        path,
+        custom_ids=None,
+        labels=None,
+        recursive=False,
+        pattern="*",
+        required_score=0.9,
+    ):
+        self.trainingset = Trainingset.from_folder(
+            path,
+            custom_ids=custom_ids,
+            labels=labels,
+            recursive=recursive,
+            pattern=pattern,
+            required_score=required_score,
+        )
 
-        # TODO: sub-batches.
-        data = {
-            "items": [
-                dataset.serialize_item(item, self.id, custom_id=custom_id, label=label)
-                for item, custom_id, label in dataset
-            ]
-        }
-        resp = self.client.post(f"/tasks/", params={"taskframe_id": self.id}, json=data)
+    def add_trainingset_from_csv(
+        self,
+        csv_path,
+        column=None,
+        input_type=None,
+        base_path=None,
+        custom_id_column=None,
+        label_column=None,
+        required_score=0.9,
+    ):
+        self.trainingset = Trainingset.from_csv(
+            csv_path,
+            column=column,
+            input_type=input_type,
+            base_path=base_path,
+            custom_id_column=custom_id_column,
+            label_column=label_column,
+            required_score=required_score,
+        )
+
+    def add_trainingset_from_dataframe(
+        self,
+        dataframe,
+        column=None,
+        input_type=None,
+        base_path=None,
+        custom_id_column=None,
+        label_column=None,
+        required_score=0.9,
+    ):
+        self.trainingset = Trainingset.from_dataframe(
+            dataframe,
+            column=column,
+            input_type=input_type,
+            base_path=base_path,
+            custom_id_column=custom_id_column,
+            label_column=label_column,
+            required_score=required_score,
+        )
 
     def submit_training_requirement(
         self, required_score=0.9,
@@ -251,14 +299,26 @@ class Taskframe(object):
             dict_writer.writeheader()
             dict_writer.writerows(tasks)
 
-    def add_team(self, workers, reviewers=[]):
+    def add_team(self, workers=[], reviewers=[], admins=[]):
         self.team = []
         workers = set(workers)
         reviewers = set(reviewers)
-        if workers.intersection(reviewers):
-            raise ValueError("team members can't be both reviewer and worker")
-        self.team.extend([{"role": "Worker", "email": x} for x in workers])
-        self.team.extend([{"role": "Reviewer", "email": x} for x in reviewers])
+        admins = set(admins)
+        if (
+            workers.intersection(reviewers)
+            or workers.intersection(admins)
+            or reviewers.intersection(admins)
+        ):
+            raise ValueError("team members can't have multiple roles")
+        self.team.extend(
+            [{"role": "Worker", "email": x, "status": "active"} for x in workers]
+        )
+        self.team.extend(
+            [{"role": "Reviewer", "email": x, "status": "active"} for x in reviewers]
+        )
+        self.team.extend(
+            [{"role": "Admin", "email": x, "status": "active"} for x in admins]
+        )
 
     def submit_team(self):
         existing_team = self.fetch_team()
@@ -277,14 +337,16 @@ class Taskframe(object):
         return self.client.get(f"/taskframes/{self.id}/users/?no_page=1").json()
 
     def preview(self):
-        tf_message = {"type": "set_taskframe", "data": self.to_dict()}
+        message = {"type": "set_preview", "data": {"taskframe": self.to_dict(),}}
 
-        task_message = {}
         if self.dataset and len(self.dataset):
-            item, _, _ = self.dataset.get_random()
-            serialized_item = self.dataset.serialize_item_preview(item, self.id)
+            item, custom_id, label, _id = self.dataset.get_random()
+            serialized_item = self.dataset.serialize_item_preview(
+                item, self.id, label=label
+            )
 
-            task_message = json.dumps({"type": "set_task", "data": serialized_item})
+            message["data"]["task"] = serialized_item
+
         css_id = str(int(random.random() * 10000))
         html = f"""
             <iframe id="frame_{css_id}" src="{APP_ENDPOINT}/embed/preview" frameBorder=0 style="width: 100%; height: 600px;"></iframe>
@@ -294,8 +356,7 @@ class Taskframe(object):
                 var init = false;
                 postMessageHandler = function(e) {{
                     if (e.source !==  $iframe.contentWindow || e.data !== 'ready' || init) return;
-                    $iframe.contentWindow.postMessage('{json.dumps(tf_message)}', '*');
-                    $iframe.contentWindow.postMessage('{task_message}', '*');
+                    $iframe.contentWindow.postMessage('{json.dumps(message)}', '*');
                     init = true;
                 }}
                 window.removeEventListener('message', postMessageHandler);
