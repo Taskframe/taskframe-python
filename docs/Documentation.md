@@ -26,16 +26,18 @@ Parameters:
 * `data_type`: Type of input data. Possible values : `image`, `text`, `audio`, `html`, `iframe`.
 * `task_type`: Type of predefined tasks (depending on the `data_type`):
   * `classification`: you may pass additional parameters:
-    * `classes`: list of single-class options
-    * `tags`: list of multi-class options
+    * `classes`: list of class options (single choice)
+    * `tags`: list of tag options (multi choices)
   * `text`: for transcription, text entry, sequence-to-sequence, etc. The annotator will have to fill a free text area.
   * `bounding_box`, `polygon`, `point`: for image annotations. Extra parameters:
-    * `classes`: list of single-class options
-    * `tags`: list of multi-class options
+    * `image_classes`: list of image level class options (single choice)
+    * `image_tags`: list of image level tags options (multi choices)
+    * `region_classes`: list of region level class options (single choice)
+    * `region_tags`: list of region level class options (multi choices)
   * `ner`: Named Entity Recognition (for `text` data). Extra parameters:
-    * `classes`: list of single-class options
+    * `classes`: list of class options (single choice)
   * `audio_annotation`: Regions annotations (for `audio` data). Extra parameters:
-    * `classes`: list of single-class options
+    * `classes`: list of class options (single choice)
   * `file_upload`: the annotator will have to upload a file(s) (experimental support for small files only). Extra parameters:
     * `multiple`: Boolean, whether multiple files are allowed
     * `files_accepted`: list of file extensions allowed, e.g. `[".jpg", ".png"]`. for all image formats simple pass `["image"]`

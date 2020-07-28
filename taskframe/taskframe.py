@@ -66,7 +66,16 @@ class Taskframe(object):
             "requires_review": self.review,
         }
 
-    acceptable_task_params = ["classes", "tags", "multiple", "files_accepted"]
+    acceptable_task_params = [
+        "classes",
+        "tags",
+        "image_classes",
+        "image_tags",
+        "region_classes",
+        "region_tags",
+        "multiple",
+        "files_accepted",
+    ]
 
     def serialize_params(self):
         return {
@@ -93,6 +102,10 @@ class Taskframe(object):
             id=id,
             classes=data["params"].get("classes"),
             tags=data["params"].get("tags"),
+            image_classes=data["params"].get("image_classes"),
+            image_tags=data["params"].get("image_tags"),
+            region_classes=data["params"].get("region_classes"),
+            region_tags=data["params"].get("region_tags"),
             multiple=data["params"].get("multiple"),
             files_accepted=data["params"].get("files_accepted"),
             redundancy=data["redundancy"],
