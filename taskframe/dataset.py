@@ -46,7 +46,7 @@ class CustomIdsLengthMismatch(Exception):
 
 
 class LabelsLengthMismatch(Exception):
-    def __init__(self, message="mismatch in length of dataset and custom_ids"):
+    def __init__(self, message="mismatch in length of dataset and labels"):
         super().__init__(message)
 
 
@@ -90,6 +90,12 @@ class Dataset(object):
             get_or_none(self.labels, i),
             get_or_none(self.ids, i),
         )
+
+    def serialized_items(self, taskframe_id):
+        for item, custom_id, label, _id in self:
+            yield self.serialize_item(
+                item, taskframe_id, custom_id=custom_id, label=label
+            )
 
     def get_random(self):
         idx = random.randint(0, len(self) - 1)
@@ -231,14 +237,7 @@ class Dataset(object):
         return self.serialize_item(*args, **kwargs)
 
     def submit(self, taskframe_id):
-        data = {
-            "items": [
-                self.serialize_item(
-                    item, taskframe_id, custom_id=custom_id, label=label
-                )
-                for item, custom_id, label, _id in self
-            ]
-        }
+        data = {"items": list(self.serialized_items(taskframe_id))}
         resp = self.client.post(
             f"/tasks/", params={"taskframe_id": taskframe_id}, json=data
         )
@@ -280,7 +279,7 @@ class FileDataset(Dataset):
         if custom_id:
             data["custom_id"] = (None, custom_id)
         if label:
-            data["label"] = (None, label)
+            data["initial_label"] = (None, label)
 
         return data
 
@@ -296,7 +295,7 @@ class FileDataset(Dataset):
                 "custom_id": custom_id,
                 "input_url": data_url,
                 "input_type": "url",
-                "label": label,
+                "initial_label": label,
                 "taskframe_id": taskframe_id,
             }
         )
@@ -304,10 +303,7 @@ class FileDataset(Dataset):
     def submit(self, taskframe_id):
         # INPUT_TYPE_FILE doesnt support batches, post items one by one.
         resp_data = []
-        for item, custom_id, label, _id in self:
-            data = self.serialize_item(
-                item, taskframe_id, custom_id=custom_id, label=label
-            )
+        for data in self.serialized_items(taskframe_id):
             resp = self.client.post(f"/tasks/", files=data)
             resp_data.append(resp.json())
         self.ids = [x["id"] for x in resp_data]
@@ -324,7 +320,7 @@ class UrlDataset(Dataset):
                 "custom_id": custom_id,
                 "input_url": item,
                 "input_type": self.input_type,
-                "label": label,
+                "initial_label": label,
                 "taskframe_id": taskframe_id,
             }
         )
@@ -345,7 +341,7 @@ class DataDataset(Dataset):
                 "custom_id": custom_id,
                 "input_data": item,
                 "input_type": self.input_type,
-                "label": label,
+                "initial_label": label,
                 "taskframe_id": taskframe_id,
             }
         )
@@ -371,6 +367,9 @@ class TrainingsetMixin(object):
             resp["is_training"] = (None, True)
         else:
             resp["is_training"] = True
+
+        resp["label"] = resp["initial_label"]
+        resp.pop("initial_label")
         return resp
 
 

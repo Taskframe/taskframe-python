@@ -25,6 +25,7 @@ class Taskframe(object):
         data_type=None,
         task_type=None,
         output_schema=None,
+        ui_schema=None,
         instruction="",
         instruction_details="",
         name="",
@@ -36,6 +37,7 @@ class Taskframe(object):
         self.data_type = data_type
         self.task_type = task_type
         self.output_schema = output_schema
+        self.ui_schema = ui_schema
         self.instruction = instruction
         self.instruction_details = instruction_details
         self.name = name
@@ -57,7 +59,7 @@ class Taskframe(object):
             "params": self.serialize_params(),
             "output_schema": self.output_schema,
             "output_schema_url": "",
-            "ui_schema": {},
+            "ui_schema": self.ui_schema,
             "ui_schema_url": "",
             "instruction": self.instruction,
             "instruction_details": self.instruction_details,
@@ -96,6 +98,7 @@ class Taskframe(object):
             data_type=data["data_type"],
             task_type=data["task_type"],
             output_schema=data["output_schema"],
+            ui_schema=data["ui_schema"],
             instruction=data["instruction"],
             instruction_details=data["instruction_details"],
             name=data["name"],
