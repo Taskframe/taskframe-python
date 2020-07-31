@@ -398,25 +398,25 @@ class Trainingset(Dataset):
         return class_map[input_type]
 
     @classmethod
-    def from_list(cls, *args, required_score=0.9, **kwargs):
+    def from_list(cls, *args, required_score=None, **kwargs):
         instance = super().from_list(*args, **kwargs)
         instance.required_score = required_score
         return instance
 
     @classmethod
-    def from_folder(cls, *args, required_score=0.9, **kwargs):
+    def from_folder(cls, *args, required_score=None, **kwargs):
         instance = super().from_folder(*args, **kwargs)
         instance.required_score = required_score
         return instance
 
     @classmethod
-    def from_csv(cls, *args, required_score=0.9, **kwargs):
+    def from_csv(cls, *args, required_score=None, **kwargs):
         instance = super().from_csv(*args, **kwargs)
         instance.required_score = required_score
         return instance
 
     @classmethod
-    def from_dataframe(cls, *args, required_score=0.9, **kwargs):
+    def from_dataframe(cls, *args, required_score=None, **kwargs):
         instance = super().from_dataframe(*args, **kwargs)
         instance.required_score = required_score
         return instance

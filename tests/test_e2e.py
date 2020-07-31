@@ -23,7 +23,7 @@ class TestClass:
         self.tf.add_dataset_from_folder("tests/imgs", pattern="*.jpg")
         self.tf.submit()
 
-        time.sleep(0.5)
+        time.sleep(0.2)
         data = self.tf.fetch()
         assert data["num_tasks"] == num_tasks + 2
 
@@ -36,7 +36,7 @@ class TestClass:
 
         self.tf.submit()
 
-        time.sleep(0.5)
+        time.sleep(0.2)
         data = self.tf.fetch()
         assert data["num_tasks"] == num_tasks + 2
 
@@ -47,7 +47,7 @@ class TestClass:
 
         self.tf.submit()
 
-        time.sleep(0.5)
+        time.sleep(0.2)
         data = self.tf.fetch()
         assert data["num_tasks"] == num_tasks + 2
 
@@ -59,10 +59,9 @@ class TestClass:
 
         self.tf.submit()
 
-        time.sleep(0.5)
+        time.sleep(0.2)
         data = self.tf.fetch()
         assert data["num_tasks"] == num_tasks + 2
-
 
     def test_export(self):
         data = self.tf.fetch()
@@ -72,6 +71,20 @@ class TestClass:
 
         self.tf.submit()
 
-        time.sleep(0.5)
+        time.sleep(0.2)
         data = self.tf.fetch()
         assert data["num_tasks"] == num_tasks + 2
+
+    def test_create(self):
+        data = self.tf.fetch()
+        num_tasks = data["num_tasks"]
+        dataframe = pd.read_csv("tests/img_paths.csv")
+        self.tf.add_dataset_from_dataframe(dataframe, column="path", base_path="tests")
+
+        tf = taskframe.Taskframe(
+            data_type="image", task_type="classification", classes=["pos", "neg"]
+        )
+        tf.submit()
+
+        time.sleep(0.5)
+        assert bool(tf.id)

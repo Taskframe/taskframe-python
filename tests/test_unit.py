@@ -290,7 +290,6 @@ class TestClass:
             ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"],
             custom_ids=[42, 43],
             labels=["dog", "cat"],
-            required_score=0.9,
         )
 
         self.tf.trainingset.client = mock_client()

@@ -201,7 +201,7 @@ class Taskframe(object):
         )
 
     def add_trainingset_from_list(
-        self, items, input_type=None, custom_ids=None, labels=None, required_score=0.9
+        self, items, input_type=None, custom_ids=None, labels=None, required_score=None
     ):
         self.trainingset = Trainingset.from_list(
             items,
@@ -218,7 +218,7 @@ class Taskframe(object):
         labels=None,
         recursive=False,
         pattern="*",
-        required_score=0.9,
+        required_score=None,
     ):
         self.trainingset = Trainingset.from_folder(
             path,
@@ -237,7 +237,7 @@ class Taskframe(object):
         base_path=None,
         custom_id_column=None,
         label_column=None,
-        required_score=0.9,
+        required_score=None,
     ):
         self.trainingset = Trainingset.from_csv(
             csv_path,
@@ -257,7 +257,7 @@ class Taskframe(object):
         base_path=None,
         custom_id_column=None,
         label_column=None,
-        required_score=0.9,
+        required_score=None,
     ):
         self.trainingset = Trainingset.from_dataframe(
             dataframe,
@@ -270,7 +270,7 @@ class Taskframe(object):
         )
 
     def submit_training_requirement(
-        self, required_score=0.9,
+        self, required_score=None,
     ):
         resp = self.client.post(
             f"/taskframes/{self.id}/set_training_requirement/",
