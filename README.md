@@ -6,5 +6,5 @@ Taskframe.ai is currently in private beta, please contact us to request an invit
 
 ## Useful links
 
-* [Getting Started: Tutorial Notebook](docs/Getting Started Tutorial.ipynb)
-* [Documentation](/wiki)
+* [Getting Started: Tutorial Notebook](docs/Getting%20Started%20Tutorial.ipynb)
+* [Documentation](https://github.com/Taskframe/taskframe-python/wiki)
