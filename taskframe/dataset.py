@@ -20,7 +20,7 @@ def get_or_none(list_, idx):
     return list_[idx] if idx < len(list_) else None
 
 
-def open_file(*args, **kwargs):
+def open_file(*args, **kwargs):  # for easier mocked unit_tests
     return open(*args, **kwargs)
 
 
@@ -63,6 +63,8 @@ class Dataset(object):
 
     INPUT_TYPES = [INPUT_TYPE_FILE, INPUT_TYPE_URL, INPUT_TYPE_DATA]
 
+    client = Client()
+
     def __init__(self, items, ids=None, custom_ids=None, labels=None, **kwargs):
 
         self.items = self.prepare_items(items, **kwargs)
@@ -75,8 +77,6 @@ class Dataset(object):
         self.custom_ids = custom_ids or []
         self.labels = labels or []
         self.ids = ids or []
-
-        self.client = Client()
 
     def __len__(self):
         return len(self.items)
@@ -279,7 +279,7 @@ class FileDataset(Dataset):
         if custom_id:
             data["custom_id"] = (None, custom_id)
         if label:
-            data["initial_label"] = (None, label)
+            data["initial_label"] = (None, json.dumps(label))
 
         return data
 

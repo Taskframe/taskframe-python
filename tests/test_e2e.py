@@ -14,21 +14,21 @@ class TestClass:
         cls.tf = taskframe.Taskframe.retrieve(os.environ.get("TEST_TASKFRAME_ID"))
         cls.tf.client.session.verify = False
 
-    def test_fetch(self):
-        data = self.tf.fetch()
+    def test_progress(self):
+        data = self.tf.progress()
 
     def test_add_from_folder(self):
-        data = self.tf.fetch()
+        data = self.tf.progress()
         num_tasks = data["num_tasks"]
         self.tf.add_dataset_from_folder("tests/imgs", pattern="*.jpg")
         self.tf.submit()
 
         time.sleep(0.2)
-        data = self.tf.fetch()
+        data = self.tf.progress()
         assert data["num_tasks"] == num_tasks + 2
 
     def test_add_from_list(self):
-        data = self.tf.fetch()
+        data = self.tf.progress()
         num_tasks = data["num_tasks"]
         self.tf.add_dataset_from_list(
             ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"], custom_ids=[42, 43]
@@ -37,22 +37,22 @@ class TestClass:
         self.tf.submit()
 
         time.sleep(0.2)
-        data = self.tf.fetch()
+        data = self.tf.progress()
         assert data["num_tasks"] == num_tasks + 2
 
     def test_add_from_csv(self):
-        data = self.tf.fetch()
+        data = self.tf.progress()
         num_tasks = data["num_tasks"]
         self.tf.add_dataset_from_csv("tests/img_paths.csv", column="path")
 
         self.tf.submit()
 
         time.sleep(0.2)
-        data = self.tf.fetch()
+        data = self.tf.progress()
         assert data["num_tasks"] == num_tasks + 2
 
     def test_add_from_dataframe(self):
-        data = self.tf.fetch()
+        data = self.tf.progress()
         num_tasks = data["num_tasks"]
         dataframe = pd.read_csv("tests/img_paths.csv")
         self.tf.add_dataset_from_dataframe(dataframe, column="path", base_path="tests")
@@ -60,11 +60,11 @@ class TestClass:
         self.tf.submit()
 
         time.sleep(0.2)
-        data = self.tf.fetch()
+        data = self.tf.progress()
         assert data["num_tasks"] == num_tasks + 2
 
     def test_export(self):
-        data = self.tf.fetch()
+        data = self.tf.progress()
         num_tasks = data["num_tasks"]
         dataframe = pd.read_csv("tests/img_paths.csv")
         self.tf.to_dataframe()
@@ -72,11 +72,11 @@ class TestClass:
         self.tf.submit()
 
         time.sleep(0.2)
-        data = self.tf.fetch()
+        data = self.tf.progress()
         assert data["num_tasks"] == num_tasks + 2
 
     def test_create(self):
-        data = self.tf.fetch()
+        data = self.tf.progress()
         num_tasks = data["num_tasks"]
         dataframe = pd.read_csv("tests/img_paths.csv")
         self.tf.add_dataset_from_dataframe(dataframe, column="path", base_path="tests")

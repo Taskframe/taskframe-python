@@ -18,15 +18,12 @@ class ApiError(Exception):
 class Client(object):
     def __init__(self):
         self.session = self.create_session()
+        self._update_token()
         if os.environ.get("TASKFRAME_SSL_VERIFY") == "False":
             self.session.verify = False
 
     def create_session(self):
-        session = requests.Session()
-        from . import api_key
-
-        session.headers.update({"authorization": f"Token {api_key}"})
-        return session
+        return requests.Session()
 
     def get(self, *args, **kwargs):
         return self._send_request("get", *args, **kwargs)
@@ -39,8 +36,14 @@ class Client(object):
 
     def _send_request(self, method, url, *args, **kwargs):
         url = f"{API_URL}{url}"
+        self._update_token()
         response = getattr(self.session, method)(url, *args, **kwargs)
         if response.status_code >= 400:
             error_message = response.text
             raise ApiError(response.status_code, error_message)
         return response
+
+    def _update_token(self):
+        from . import api_key
+
+        self.session.headers.update({"authorization": f"Token {api_key}"})
