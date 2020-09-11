@@ -42,20 +42,36 @@ class Task(object):
         return f"<Task object [{self.id}]>"
 
     @classmethod
-    def retrieve(cls, id=None, custom_id=None):
+    def list(cls, taskframe_id=None, offset=0, limit=25):
+
+        if not taskframe_id:
+            raise InvalidParameter(f"Missing required parameter taskframe_id")
+
+        api_resp = cls.client.get(
+            f"/tasks/",
+            params={"taskframe_id": taskframe_id, "offset": offset, "limit": limit},
+        ).json()
+        return [cls.from_dict(api_data) for api_data in api_resp["results"]]
+
+    @classmethod
+    def retrieve(cls, id=None, custom_id=None, taskframe_id=None):
         api_data = None
         if id:
             api_data = cls.client.get(f"/tasks/{id}/").json()
-        elif custom_id:
+        elif custom_id and taskframe_id:
             api_resp = cls.client.get(
-                f"/tasks/", params={"custom_id": custom_id}
+                f"/tasks/",
+                params={"custom_id": custom_id, "taskframe_id": taskframe_id},
             ).json()
             if api_resp["count"] == 1:
                 api_data = api_resp["results"][0]
-            if api_resp["count"] == 0:
+            elif api_resp["count"] == 0:
                 raise ApiError(404, {"detail": "Not found."})
             else:
-                raise ApiError(404, {"detail": "Multiple objects found."})
+                raise ApiError(400, {"detail": "Multiple objects found."})
+
+        else:
+            raise InvalidParameter(f"Missing id or (custom_id,taskframe_id)")
         return cls.from_dict(api_data)
 
     @classmethod
@@ -111,7 +127,6 @@ class Task(object):
                 setattr(existing_instance, kwarg, value)
 
         params = existing_instance.to_dict()
-
         api_data = cls.client.put(f"/tasks/{id}/", json=params).json()
         return cls.from_dict(api_data)
 
@@ -153,8 +168,8 @@ class Task(object):
             "id": self.id,
             "custom_id": self.custom_id,
             "taskframe_id": self.taskframe_id,
-            "input_url": self.input_url,
-            "input_data": self.input_data,
+            "input_url": self.input_url if self.input_url else "",
+            "input_data": self.input_data if self.input_data else "",
             "input_file": self.input_file,
             "input_type": self.input_type,
             "initial_label": self.initial_label,

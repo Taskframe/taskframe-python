@@ -83,7 +83,7 @@ class TestClass:
         tfs = Taskframe.list()
 
         Taskframe.client.session.get.assert_called_with(
-            f"{API_URL}/taskframes/?offset=0&limit=25"
+            f"{API_URL}/taskframes/", params={"offset": 0, "limit": 25}
         )
 
         assert len(tfs) == 2

@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 
 import pandas as pd
 
@@ -52,8 +53,11 @@ class TestClass:
         self.tf.trainingset = None
         data = self.tf.progress()
         num_tasks = data["num_tasks"]
+
+        custom_ids = [uuid.uuid4().hex[:12], uuid.uuid4().hex[:12]]
+
         self.tf.add_dataset_from_list(
-            ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"], custom_ids=[42, 43]
+            ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"], custom_ids=custom_ids
         )
 
         self.tf.submit()
@@ -61,6 +65,10 @@ class TestClass:
         time.sleep(0.2)
         data = self.tf.progress()
         assert data["num_tasks"] == num_tasks + 2
+
+        # update:
+        task = taskframe.Task.retrieve(custom_id=custom_ids[0], taskframe_id=self.tf.id)
+        taskframe.Task.update(task.id, custom_id=uuid.uuid4().hex[:12])
 
     def test_add_from_csv(self):
         self.tf.dataset = None

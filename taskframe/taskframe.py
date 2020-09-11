@@ -85,7 +85,9 @@ class Taskframe(object):
 
     @classmethod
     def list(cls, offset=0, limit=25):
-        api_resp = cls.client.get(f"/taskframes/?offset={offset}&limit={limit}").json()
+        api_resp = cls.client.get(
+            f"/taskframes/", params={"offset": offset, "limit": limit}
+        ).json()
         return [cls.from_dict(api_data) for api_data in api_resp.get("results", [])]
 
     @classmethod
@@ -293,7 +295,9 @@ class Taskframe(object):
     # Export methods #########################
 
     def to_list(self):
-        resp = self.client.get(f"/tasks/?taskframe_id={self.id}&no_page=1",)
+        resp = self.client.get(
+            f"/tasks/", params={"taskframe_id": self.id, "no_page": 1}
+        )
         return resp.json()
 
     def to_dataframe(self):
