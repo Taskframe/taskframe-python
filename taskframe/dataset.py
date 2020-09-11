@@ -367,9 +367,6 @@ class TrainingsetMixin(object):
             resp["is_training"] = (None, True)
         else:
             resp["is_training"] = True
-
-        resp["label"] = resp["initial_label"]
-        resp.pop("initial_label")
         return resp
 
 

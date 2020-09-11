@@ -31,6 +31,7 @@ class TestClass:
             "instruction_details": "",
             "redundancy": 1,
             "requires_review": True,
+            "callback_url": "",
         }
         Taskframe.client = mock_client()
 
@@ -139,6 +140,7 @@ class TestClass:
                 "mode": "inhouse",
                 "redundancy": 1,
                 "requires_review": True,
+                "callback_url": "",
             },
         )
 
@@ -166,6 +168,7 @@ class TestClass:
                 "mode": "inhouse",
                 "redundancy": 1,
                 "requires_review": True,
+                "callback_url": "",
             },
         )
 

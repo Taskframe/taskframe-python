@@ -55,6 +55,7 @@ class Taskframe(object):
         id=None,
         review=True,
         redundancy=1,
+        callback_url="",
         **kwargs,
     ):
         self.data_type = data_type
@@ -71,6 +72,7 @@ class Taskframe(object):
         self.trainingset = None
         self.review = review
         self.redundancy = redundancy
+        self.callback_url = callback_url
         self.workers = []
         self.reviewers = []
 
@@ -110,6 +112,7 @@ class Taskframe(object):
         name="",
         review=True,
         redundancy=1,
+        callback_url="",
         **kwargs,
     ):
 
@@ -125,6 +128,7 @@ class Taskframe(object):
             name=name,
             review=review,
             redundancy=redundancy,
+            callback_url=callback_url,
             **kwargs,
         ).to_dict()
         api_data = cls._create_from_dict(params)
@@ -148,6 +152,7 @@ class Taskframe(object):
             "name",
             "review",
             "redundancy",
+            "callback_url",
         ]
 
         for kwarg, value in kwargs.items():
@@ -243,6 +248,7 @@ class Taskframe(object):
             name=data.get("name", ""),
             redundancy=data.get("redundancy"),
             review=data.get("requires_review"),
+            callback_url=data.get("callback_url", ""),
             **kwargs,
         )
 
@@ -262,6 +268,7 @@ class Taskframe(object):
             "mode": "inhouse",
             "redundancy": self.redundancy,
             "requires_review": self.review,
+            "callback_url": self.callback_url,
         }
 
     def _serialize_params(self):

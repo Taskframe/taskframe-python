@@ -69,7 +69,7 @@ class TestClass:
                         "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
                         "custom_id": (None, 42),
                         "input_type": (None, "file"),
-                        "label": (None, '"dog"'),
+                        "initial_label": (None, '"dog"'),
                         "is_training": (None, True),
                     },
                 ),
@@ -80,7 +80,7 @@ class TestClass:
                         "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
                         "input_type": (None, "file"),
                         "custom_id": (None, 43),
-                        "label": (None, '"cat"'),
+                        "initial_label": (None, '"cat"'),
                         "is_training": (None, True),
                     },
                 ),
@@ -281,7 +281,7 @@ class TestClass:
                 "input_type": (None, "file"),
                 "custom_id": (None, 43),
                 "is_training": (None, True),
-                "label": (None, '"cat"'),
+                "initial_label": (None, '"cat"'),
             },
         )
         self.tf.trainingset.client.session.post.assert_has_calls(
