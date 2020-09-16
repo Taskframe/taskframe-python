@@ -54,7 +54,7 @@ class TestClass:
         data = self.tf.progress()
         num_tasks = data["num_tasks"]
 
-        custom_ids = [uuid.uuid4().hex[:12], uuid.uuid4().hex[:12]]
+        custom_ids = [rand(), rand()]
 
         self.tf.add_dataset_from_list(
             ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"], custom_ids=custom_ids
@@ -65,10 +65,6 @@ class TestClass:
         time.sleep(0.2)
         data = self.tf.progress()
         assert data["num_tasks"] == num_tasks + 2
-
-        # update:
-        task = taskframe.Task.retrieve(custom_id=custom_ids[0], taskframe_id=self.tf.id)
-        taskframe.Task.update(task.id, custom_id=uuid.uuid4().hex[:12])
 
     def test_add_from_csv(self):
         self.tf.dataset = None
@@ -118,3 +114,56 @@ class TestClass:
 
         time.sleep(0.5)
         assert bool(tf.id)
+
+    def test_task_class(self):
+        custom_id = rand()
+
+        taskframe.Task.create(
+            custom_id=custom_id,
+            taskframe_id=self.tf.id,
+            input_file="tests/imgs/foo.jpg",
+        )
+
+        task = taskframe.Task.retrieve(custom_id=custom_id, taskframe_id=self.tf.id)
+
+        assert task.input_type == "file"
+        assert task.input_url == ""
+
+        new_custom_id = rand()
+        taskframe.Task.update(
+            task.id, custom_id=new_custom_id, input_url="http://example.com/img.jpg",
+        )
+
+        task = taskframe.Task.retrieve(custom_id=new_custom_id, taskframe_id=self.tf.id)
+
+        assert task.input_url == "http://example.com/img.jpg"
+        assert task.input_type == "url"
+
+        taskframe.Task.update(
+            task.id, input_file="tests/imgs/bar.jpg",
+        )
+
+        task = taskframe.Task.retrieve(custom_id=new_custom_id, taskframe_id=self.tf.id)
+        assert task.input_url == ""
+        assert task.input_type == "file"
+
+    def test_team_member_class(self):
+        member_id = taskframe.TeamMember.create(
+            taskframe_id=self.tf.id, email=f"{rand()}@{rand()}.com", role="Worker",
+        ).id
+        member = taskframe.TeamMember.retrieve(id=member_id, taskframe_id=self.tf.id)
+
+        assert member.status == "active"
+
+        taskframe.TeamMember.update(
+            member_id, taskframe_id=self.tf.id, role="Reviewer", status="inactive"
+        )
+
+        member = taskframe.TeamMember.retrieve(id=member_id, taskframe_id=self.tf.id)
+
+        assert member.status == "inactive"
+        assert member.role == "Reviewer"
+
+
+def rand(n=6):
+    return uuid.uuid4().hex[:n]

@@ -18,13 +18,13 @@ class Task(object):
         id=None,
         custom_id=None,
         taskframe_id=None,
-        input_url=None,
-        input_data=None,
+        input_url="",
+        input_data="",
         input_file=None,
         input_type=None,
         label=None,
         initial_label=None,
-        status=None,
+        status="pending_work",
     ):
 
         self.id = id
@@ -79,8 +79,8 @@ class Task(object):
         cls,
         custom_id=None,
         taskframe_id=None,
-        input_url=None,
-        input_data=None,
+        input_url="",
+        input_data="",
         input_file=None,
         initial_label=None,
     ):
@@ -126,8 +126,15 @@ class Task(object):
             ]:
                 setattr(existing_instance, kwarg, value)
 
+            if kwarg in ["input_url", "input_data", "input_file",] and value:
+                existing_instance.input_type = None
+
         params = existing_instance.to_dict()
-        api_data = cls.client.put(f"/tasks/{id}/", json=params).json()
+        api_data = {}
+        if existing_instance.input_file:
+            api_data = cls.client.put(f"/tasks/{id}/", files=params).json()
+        else:
+            api_data = cls.client.put(f"/tasks/{id}/", json=params).json()
         return cls.from_dict(api_data)
 
     def submit(self):
@@ -156,6 +163,8 @@ class Task(object):
             data = {
                 "taskframe_id": (None, self.taskframe_id),
                 "input_file": (path.name, file_),
+                "input_data": (None, ""),
+                "input_url": (None, ""),
                 # "input_type": (None, self.input_type),
             }
             if self.custom_id:
@@ -168,13 +177,12 @@ class Task(object):
             "id": self.id,
             "custom_id": self.custom_id,
             "taskframe_id": self.taskframe_id,
-            "input_url": self.input_url if self.input_url else "",
-            "input_data": self.input_data if self.input_data else "",
+            "input_url": self.input_url,
+            "input_data": self.input_data,
             "input_file": self.input_file,
             "input_type": self.input_type,
             "initial_label": self.initial_label,
             "label": self.label,
-            "status": self.status,
         }
 
     @classmethod
@@ -184,8 +192,8 @@ class Task(object):
             id=data.get("id"),
             custom_id=data.get("custom_id"),
             taskframe_id=data.get("taskframe_id"),
-            input_url=data.get("input_url"),
-            input_data=data.get("input_data"),
+            input_url=data.get("input_url", ""),
+            input_data=data.get("input_data", ""),
             input_file=data.get("input_file"),
             input_type=data.get("input_type"),
             label=data.get("label"),

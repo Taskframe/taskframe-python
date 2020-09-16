@@ -62,7 +62,6 @@ class TestTaskClass:
                 "input_file": None,
                 "input_data": "",
                 "label": None,
-                "status": "pending_work",
             },
         )
 
@@ -87,6 +86,5 @@ class TestTaskClass:
                 "input_type": None,
                 "initial_label": "foo",
                 "label": None,
-                "status": None,
             },
         )

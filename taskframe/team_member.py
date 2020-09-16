@@ -36,7 +36,8 @@ class TeamMember(object):
             raise InvalidParameter(f"Missing required parameter taskframe_id")
 
         api_resp = cls.client.get(
-            f"/taskframes/{taskframe_id}/users/?offset={offset}&limit={limit}"
+            f"/taskframes/{taskframe_id}/users/",
+            params={"offset": offset, "limit": limit},
         ).json()
         return [cls.from_dict(api_data) for api_data in api_resp["results"]]
 
@@ -73,7 +74,7 @@ class TeamMember(object):
     @classmethod
     def update(cls, id, taskframe_id=None, role=None, status=None):
 
-        if not any([bool(x) for x in [id, taskframe_id]]):
+        if not all([bool(x) for x in [id, taskframe_id]]):
             raise InvalidParameter(
                 f"Missing required parameter. Required parameters: id, taskframe_id"
             )
