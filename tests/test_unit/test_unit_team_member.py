@@ -20,7 +20,7 @@ class TestTeamMemberClass:
             "id": cls.team_member.id,
             "taskframe_id": cls.team_member.taskframe_id,
             "status": "active",
-            "role": "Admin",
+            "role": "admin",
             "email": "foo@bar.com",
         }
 
@@ -56,7 +56,7 @@ class TestTeamMemberClass:
                 "id": "dummy_user_id",
                 "taskframe_id": "dummy_tf_id",
                 "status": "inactive",
-                "role": "Admin",
+                "role": "admin",
                 "email": "foo@bar.com",
             },
         )
@@ -64,7 +64,7 @@ class TestTeamMemberClass:
     def test_create(self):
         team_member = TeamMember.create(
             taskframe_id=self.team_member.taskframe_id,
-            role="Worker",
+            role="worker",
             email="fizz@buzz.com",
         )
 
@@ -76,7 +76,7 @@ class TestTeamMemberClass:
                 "id": None,
                 "taskframe_id": "dummy_tf_id",
                 "email": "fizz@buzz.com",
-                "role": "Worker",
+                "role": "worker",
                 "status": "active",
             },
         )

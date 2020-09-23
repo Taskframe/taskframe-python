@@ -21,14 +21,13 @@ class TestClass:
             "name": "",
             "data_type": "image",
             "task_type": "classification",
-            "instruction": "",
             "mode": "inhouse",
             "output_schema": None,
             "output_schema_url": "",
             "ui_schema": None,
             "ui_schema_url": "",
             "params": {},
-            "instruction_details": "",
+            "instructions": "",
             "redundancy": 1,
             "requires_review": True,
             "callback_url": "",
@@ -60,7 +59,6 @@ class TestClass:
                     "num_pending_work": 0,
                     "num_pending_review": 0,
                     "num_finished": 0,
-                    "instruction": "",
                     "mode": "inhouse",
                     "env": "sandbox",
                 },
@@ -74,7 +72,6 @@ class TestClass:
                     "num_pending_work": 0,
                     "num_pending_review": 0,
                     "num_finished": 0,
-                    "instruction": "",
                     "mode": "inhouse",
                     "env": "sandbox",
                 },
@@ -94,16 +91,14 @@ class TestClass:
         Taskframe.client.session.get.return_value.json.return_value = self.tf_serialized
 
         tf = Taskframe.update(
-            self.tf.id,
-            classes=["fizz", "buzz"],
-            instruction="these are the instructions",
+            self.tf.id, classes=["fizz", "buzz"], name="this is the name",
         )
 
         assert isinstance(tf, Taskframe)
 
         updated_tf_serialized = self.tf_serialized.copy()
 
-        updated_tf_serialized["instruction"] = "these are the instructions"
+        updated_tf_serialized["name"] = "this is the name"
         updated_tf_serialized["params"]["classes"] = ["fizz", "buzz"]
 
         Taskframe.client.session.put.assert_called_with(
@@ -135,8 +130,7 @@ class TestClass:
                 "output_schema_url": "",
                 "ui_schema": None,
                 "ui_schema_url": "",
-                "instruction": "",
-                "instruction_details": "",
+                "instructions": "",
                 "mode": "inhouse",
                 "redundancy": 1,
                 "requires_review": True,
@@ -163,8 +157,7 @@ class TestClass:
                 "output_schema_url": "",
                 "ui_schema": None,
                 "ui_schema_url": "",
-                "instruction": "",
-                "instruction_details": "",
+                "instructions": "",
                 "mode": "inhouse",
                 "redundancy": 1,
                 "requires_review": True,
@@ -203,7 +196,7 @@ class TestClass:
         TeamMember.client.session.post.assert_called_with(
             f"{API_URL}/taskframes/{self.tf.id}/users/",
             json={
-                "role": "Reviewer",
+                "role": "reviewer",
                 "status": "active",
                 "email": "sam@reviewer.com",
                 "taskframe_id": self.tf.id,
@@ -217,7 +210,7 @@ class TestClass:
                 "id": 1232442,
                 "taskframe_id": self.tf.id,
                 "email": "prexisting@worker.com",
-                "role": "Worker",
+                "role": "worker",
                 "status": "active",
             },
         )

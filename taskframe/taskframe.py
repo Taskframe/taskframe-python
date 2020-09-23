@@ -49,8 +49,7 @@ class Taskframe(object):
         output_schema_url="",
         ui_schema=None,
         ui_schema_url="",
-        instruction="",
-        instruction_details="",
+        instructions="",
         name="",
         id=None,
         review=True,
@@ -64,8 +63,7 @@ class Taskframe(object):
         self.output_schema_url = output_schema_url
         self.ui_schema = ui_schema
         self.ui_schema_url = ui_schema_url
-        self.instruction = instruction
-        self.instruction_details = instruction_details
+        self.instructions = instructions
         self.name = name
         self.id = id
         self.dataset = None
@@ -109,8 +107,7 @@ class Taskframe(object):
         output_schema_url="",
         ui_schema=None,
         ui_schema_url="",
-        instruction="",
-        instruction_details="",
+        instructions="",
         name="",
         review=True,
         redundancy=1,
@@ -125,8 +122,7 @@ class Taskframe(object):
             output_schema_url=output_schema_url,
             ui_schema=ui_schema,
             ui_schema_url=ui_schema_url,
-            instruction=instruction,
-            instruction_details=instruction_details,
+            instructions=instructions,
             name=name,
             review=review,
             redundancy=redundancy,
@@ -149,8 +145,7 @@ class Taskframe(object):
             "output_schema_url",
             "ui_schema",
             "ui_schema_url",
-            "instruction",
-            "instruction_details",
+            "instructions",
             "name",
             "review",
             "redundancy",
@@ -245,8 +240,7 @@ class Taskframe(object):
             output_schema_url=data.get("output_schema_url", ""),
             ui_schema=data.get("ui_schema"),
             ui_schema_url=data.get("ui_schema_url", ""),
-            instruction=data.get("instruction", ""),
-            instruction_details=data.get("instruction_details", ""),
+            instructions=data.get("instructions", ""),
             name=data.get("name", ""),
             redundancy=data.get("redundancy"),
             review=data.get("requires_review"),
@@ -265,8 +259,7 @@ class Taskframe(object):
             "output_schema_url": "",
             "ui_schema": self.ui_schema,
             "ui_schema_url": "",
-            "instruction": self.instruction,
-            "instruction_details": self.instruction_details,
+            "instructions": self.instructions,
             "mode": "inhouse",
             "redundancy": self.redundancy,
             "requires_review": self.review,
@@ -487,9 +480,9 @@ class Taskframe(object):
 
         team_data = []
 
-        team_data.extend([{"role": "Worker", "email": email} for email in workers])
-        team_data.extend([{"role": "Reviewer", "email": email} for email in reviewers])
-        team_data.extend([{"role": "Admin", "email": email} for email in admins])
+        team_data.extend([{"role": "worker", "email": email} for email in workers])
+        team_data.extend([{"role": "reviewer", "email": email} for email in reviewers])
+        team_data.extend([{"role": "admin", "email": email} for email in admins])
 
         self.team = [TeamMember.from_dict(x) for x in team_data]
 

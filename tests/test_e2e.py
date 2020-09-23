@@ -149,20 +149,20 @@ class TestClass:
 
     def test_team_member_class(self):
         member_id = taskframe.TeamMember.create(
-            taskframe_id=self.tf.id, email=f"{rand()}@{rand()}.com", role="Worker",
+            taskframe_id=self.tf.id, email=f"{rand()}@{rand()}.com", role="worker",
         ).id
         member = taskframe.TeamMember.retrieve(id=member_id, taskframe_id=self.tf.id)
 
         assert member.status == "active"
 
         taskframe.TeamMember.update(
-            member_id, taskframe_id=self.tf.id, role="Reviewer", status="inactive"
+            member_id, taskframe_id=self.tf.id, role="reviewer", status="inactive"
         )
 
         member = taskframe.TeamMember.retrieve(id=member_id, taskframe_id=self.tf.id)
 
         assert member.status == "inactive"
-        assert member.role == "Reviewer"
+        assert member.role == "reviewer"
 
 
 def rand(n=6):

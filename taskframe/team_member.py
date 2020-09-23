@@ -11,7 +11,7 @@ class InvalidParameter(Exception):
 
 class TeamMember(object):
 
-    ROLE_CHOICES = ["Admin", "Worker", "Reviewer"]
+    ROLE_CHOICES = ["admin", "worker", "reviewer"]
     STATUS_CHOICES = ["active", "inactive"]
 
     client = Client()

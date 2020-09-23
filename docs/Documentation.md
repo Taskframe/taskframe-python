@@ -12,8 +12,7 @@ __init__(
     task_type=None,
     classes=None,
     output_schema=None,
-    instruction="",
-    instruction_details=None,
+    instructions=None,
     name=None,
     id=None,
     redundancy=1,
@@ -44,8 +43,7 @@ Parameters:
   * `custom`: Custom task based on a JSON Schema, Extra parameters:
     * `output_schema`: a valid JSON Schema
   * `name`: the name that will appear in the platform list views (optional)
-  * `instruction`: 1 line instruction that appears on top of the worker interface
-  * `instruction_detail`: Free HTML section that will appear at the bottom of the worker interface. Allows safe HTML tags (`p`, `img`, etc.)
+  * `instructions`: Free HTML section that will appear at the bottom of the worker interface. Allows safe HTML tags (`p`, `img`, etc.)
   * `id`: if you have already created your Taskframe you can simply create a Taskframe instance with the id, then call methods described below to fetch results, etc.
   * `redundancy`: Number of distinct workers who will perform each task
   * `review`: If True, each task will have to be verified by a reviewer
