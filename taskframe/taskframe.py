@@ -321,6 +321,7 @@ class Taskframe(object):
             "input_type",
             "status",
             "label",
+            "initial_label",
         ]
         with open(path, "w") as output_file:
             dict_writer = csv.DictWriter(output_file, keys)

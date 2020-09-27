@@ -164,6 +164,10 @@ class TestClass:
         assert member.status == "inactive"
         assert member.role == "reviewer"
 
+    def test_export(self):
+        df = self.tf.to_dataframe()
+        self.tf.to_csv("dev/test_e2e_export.csv")
+
 
 def rand(n=6):
     return uuid.uuid4().hex[:n]
