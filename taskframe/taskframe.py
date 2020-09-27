@@ -243,7 +243,7 @@ class Taskframe(object):
             instructions=data.get("instructions", ""),
             name=data.get("name", ""),
             redundancy=data.get("redundancy"),
-            review=data.get("requires_review"),
+            review=data.get("review"),
             callback_url=data.get("callback_url", ""),
             **kwargs,
         )
@@ -262,7 +262,7 @@ class Taskframe(object):
             "instructions": self.instructions,
             "mode": "inhouse",
             "redundancy": self.redundancy,
-            "requires_review": self.review,
+            "review": self.review,
             "callback_url": self.callback_url,
         }
 

@@ -29,7 +29,7 @@ class TestClass:
             "params": {},
             "instructions": "",
             "redundancy": 1,
-            "requires_review": True,
+            "review": True,
             "callback_url": "",
         }
         Taskframe.client = mock_client()
@@ -133,7 +133,7 @@ class TestClass:
                 "instructions": "",
                 "mode": "inhouse",
                 "redundancy": 1,
-                "requires_review": True,
+                "review": True,
                 "callback_url": "",
             },
         )
@@ -160,7 +160,7 @@ class TestClass:
                 "instructions": "",
                 "mode": "inhouse",
                 "redundancy": 1,
-                "requires_review": True,
+                "review": True,
                 "callback_url": "",
             },
         )
