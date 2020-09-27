@@ -38,7 +38,7 @@ class TestClass:
         num_tasks = data["num_tasks"]
         self.tf.add_trainingset_from_list(
             ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"],
-            custom_ids=[8822332, 8822333],
+            custom_ids=[rand(), rand()],
             labels=["dog", "cat"],
         )
 

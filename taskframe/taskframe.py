@@ -45,8 +45,8 @@ class Taskframe(object):
         self,
         data_type=None,
         task_type=None,
-        output_schema=None,
-        output_schema_url="",
+        json_schema=None,
+        json_schema_url="",
         ui_schema=None,
         ui_schema_url="",
         instructions="",
@@ -59,8 +59,8 @@ class Taskframe(object):
     ):
         self.data_type = data_type
         self.task_type = task_type
-        self.output_schema = output_schema
-        self.output_schema_url = output_schema_url
+        self.json_schema = json_schema
+        self.json_schema_url = json_schema_url
         self.ui_schema = ui_schema
         self.ui_schema_url = ui_schema_url
         self.instructions = instructions
@@ -103,8 +103,8 @@ class Taskframe(object):
         cls,
         data_type=None,
         task_type=None,
-        output_schema=None,
-        output_schema_url="",
+        json_schema=None,
+        json_schema_url="",
         ui_schema=None,
         ui_schema_url="",
         instructions="",
@@ -118,8 +118,8 @@ class Taskframe(object):
         params = cls(
             data_type=data_type,
             task_type=task_type,
-            output_schema=output_schema,
-            output_schema_url=output_schema_url,
+            json_schema=json_schema,
+            json_schema_url=json_schema_url,
             ui_schema=ui_schema,
             ui_schema_url=ui_schema_url,
             instructions=instructions,
@@ -141,8 +141,8 @@ class Taskframe(object):
         existing_instance = cls.retrieve(id)
 
         updatable_attrs = [
-            "output_schema",
-            "output_schema_url",
+            "json_schema",
+            "json_schema_url",
             "ui_schema",
             "ui_schema_url",
             "instructions",
@@ -236,8 +236,8 @@ class Taskframe(object):
             id=data.get("id"),
             data_type=data.get("data_type"),
             task_type=data.get("task_type"),
-            output_schema=data.get("output_schema"),
-            output_schema_url=data.get("output_schema_url", ""),
+            json_schema=data.get("json_schema"),
+            json_schema_url=data.get("json_schema_url", ""),
             ui_schema=data.get("ui_schema"),
             ui_schema_url=data.get("ui_schema_url", ""),
             instructions=data.get("instructions", ""),
@@ -255,8 +255,8 @@ class Taskframe(object):
             "data_type": self.data_type,
             "task_type": self.task_type,
             "params": self._serialize_params(),
-            "output_schema": self.output_schema,
-            "output_schema_url": "",
+            "json_schema": self.json_schema,
+            "json_schema_url": "",
             "ui_schema": self.ui_schema,
             "ui_schema_url": "",
             "instructions": self.instructions,

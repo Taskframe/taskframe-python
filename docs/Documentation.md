@@ -11,7 +11,7 @@ __init__(
     data_type=None,
     task_type=None,
     classes=None,
-    output_schema=None,
+    json_schema=None,
     instructions=None,
     name=None,
     id=None,
@@ -41,7 +41,7 @@ Parameters:
     * `multiple`: Boolean, whether multiple files are allowed
     * `files_accepted`: list of file extensions allowed, e.g. `[".jpg", ".png"]`. for all image formats simple pass `["image"]`
   * `custom`: Custom task based on a JSON Schema, Extra parameters:
-    * `output_schema`: a valid JSON Schema
+    * `json_schema`: a valid JSON Schema
   * `name`: the name that will appear in the platform list views (optional)
   * `instructions`: Free HTML section that will appear at the bottom of the worker interface. Allows safe HTML tags (`p`, `img`, etc.)
   * `id`: if you have already created your Taskframe you can simply create a Taskframe instance with the id, then call methods described below to fetch results, etc.
