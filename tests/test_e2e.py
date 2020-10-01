@@ -3,7 +3,6 @@ import time
 import uuid
 
 import pandas as pd
-
 import taskframe
 
 taskframe.api_key = os.environ.get("TASKFRAME_API_KEY")
@@ -167,6 +166,20 @@ class TestClass:
     def test_export(self):
         df = self.tf.to_dataframe()
         self.tf.to_csv("dev/test_e2e_export.csv")
+
+    def test_merge_to_dataframe(self):
+        initial_dataframe = pd.read_csv("tests/img_paths.csv")[["path", "identifier"]]
+        labelled_dataframe = self.tf.merge_to_dataframe(
+            initial_dataframe, custom_id_column="identifier"
+        )
+
+        # label column already present : should be dropped.
+        initial_dataframe = pd.read_csv("tests/img_paths.csv")[
+            ["path", "identifier", "label"]
+        ]
+        labelled_dataframe = self.tf.merge_to_dataframe(
+            initial_dataframe, custom_id_column="identifier"
+        )
 
 
 def rand(n=6):

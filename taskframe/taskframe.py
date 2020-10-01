@@ -33,10 +33,10 @@ class Taskframe(object):
     acceptable_params = [
         "classes",
         "tags",
-        "image_classes",
-        "image_tags",
-        "region_classes",
-        "region_tags",
+        "global_classes",
+        "global_tags",
+        "global_json_schema",
+        "global_ui_schema",
         "multiple",
         "files_accepted",
     ]
@@ -299,11 +299,13 @@ class Taskframe(object):
 
         return pandas.DataFrame(tasks)
 
-    def merge_to_dataframe(self, dataframe, custom_id_column):
-        answer_dataframe = self.to_dataframe()
-        output_columns = list(dataframe.columns) + ["label"]
-        return dataframe.merge(
-            answer_dataframe, left_on=custom_id_column, right_on="custom_id"
+    def merge_to_dataframe(self, initial_dataframe, custom_id_column):
+        exported_dataframe = self.to_dataframe()
+        if "label" in initial_dataframe.columns:
+            initial_dataframe = initial_dataframe.drop("label", axis=1)
+        output_columns = list(initial_dataframe.columns) + ["label"]
+        return initial_dataframe.merge(
+            exported_dataframe, left_on=custom_id_column, right_on="custom_id"
         )[output_columns]
 
     def to_csv(self, path):

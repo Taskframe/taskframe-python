@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, call, mock_open, patch
 
 import pandas as pd
 import pytest
-
 from taskframe.client import API_URL, Client
 from taskframe.taskframe import InvalidParameter, Taskframe
 from taskframe.team_member import TeamMember
@@ -35,6 +34,29 @@ class TestClass:
         Taskframe.client = mock_client()
 
         TeamMember.client = mock_client()
+
+        cls.get_tasks_mock_data = [
+            {
+                "id": "abcde",
+                "custom_id": "foo",
+                "taskframe_id": "dummy_id",
+                "taskframe_name": "",
+                "input_type": "file",
+                "status": "finished",
+                "label": "label1",
+                "initial_label": None,
+            },
+            {
+                "id": "fghi",
+                "custom_id": "bar",
+                "taskframe_id": "dummy_id",
+                "taskframe_name": "",
+                "input_type": "file",
+                "status": "finished",
+                "label": "label2",
+                "initial_label": None,
+            },
+        ]
 
     def test_retrieve(self):
         tf = Taskframe.retrieve(self.tf.id)
@@ -214,3 +236,55 @@ class TestClass:
                 "status": "active",
             },
         )
+
+    def test_to_list(self):
+        Taskframe.client.session.get.return_value.json.return_value = (
+            self.get_tasks_mock_data
+        )
+        data = self.tf.to_list()
+
+        assert [x["label"] for x in data] == ["label1", "label2"]
+
+        Taskframe.client.session.get.assert_called_with(
+            f"{API_URL}/tasks/", params={"taskframe_id": self.tf.id, "no_page": 1}
+        )
+
+    def test_to_csv(self):
+        Taskframe.client.session.get.return_value.json.return_value = (
+            self.get_tasks_mock_data
+        )
+        csv = self.tf.to_csv("dev/test_unit_export.csv")
+        df = pd.read_csv("dev/test_unit_export.csv")
+        assert list(df.label) == ["label1", "label2"]
+
+    def test_to_dataframe(self):
+        Taskframe.client.session.get.return_value.json.return_value = (
+            self.get_tasks_mock_data
+        )
+
+        df = self.tf.to_dataframe()
+
+        assert list(df.label) == ["label1", "label2"]
+
+    def test_merge_to_dataframe(self):
+        initial_df = pd.read_csv("tests/img_paths.csv")[["path", "identifier"]]
+        merged_df = self.tf.merge_to_dataframe(
+            initial_df, custom_id_column="identifier"
+        )
+
+        assert list(merged_df.label) == ["label1", "label2"]
+        assert not hasattr(initial_df, "label")
+
+        # test merge_to_dataframe when label column already present -> drop column.
+        initial_df = pd.read_csv("tests/img_paths.csv")[
+            ["path", "identifier", "label"]
+        ].fillna("")
+
+        assert list(initial_df.label) == ["", "cat"]
+
+        merged_df = self.tf.merge_to_dataframe(
+            initial_df, custom_id_column="identifier"
+        )
+
+        assert list(merged_df.label) == ["label1", "label2"]
+        assert list(initial_df.label) == ["", "cat"]
