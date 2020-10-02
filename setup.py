@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="taskframe",
-    version="0.1.5",
+    version="0.1.6",
     author="Denis Vilar",
     description="Taskframe Python client",
     long_description=long_description,

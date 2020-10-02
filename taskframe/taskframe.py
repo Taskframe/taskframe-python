@@ -26,6 +26,13 @@ class InvalidParameter(Exception):
         super().__init__(message)
 
 
+class MissingId(Exception):
+    def __init__(
+        self, message="Missing taskframe id. You probably need to call submit() first."
+    ):
+        super().__init__(message)
+
+
 class Taskframe(object):
 
     client = Client()
@@ -68,6 +75,7 @@ class Taskframe(object):
         self.id = id
         self.dataset = None
         self.trainingset = None
+        self.team = None
         self.review = review
         self.redundancy = redundancy
         self.callback_url = callback_url
@@ -177,6 +185,8 @@ class Taskframe(object):
             self.submit_training_requirement(
                 required_score=self.trainingset.required_score
             )
+        if self.team:
+            self.submit_team()
 
     @classmethod
     def _create_from_dict(cls, data):
@@ -215,6 +225,14 @@ class Taskframe(object):
             </script>
             """
         return display(HTML(html))
+
+    def get_url(self):
+        if not self.id:
+            raise MissingId()
+        return f"{APP_ENDPOINT}/taskframes/{self.id}"
+
+    def open(self):
+        display(Javascript(f'window.open("{self.get_url()}", "_blank");'))
 
     def progress(self):
         """Returns a dict of metrics related to the progress of the taskframe"""
