@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="taskframe",
-    version="0.1.6",
+    version="0.1.7",
     author="Denis Vilar",
     description="Taskframe Python client",
     long_description=long_description,
@@ -17,6 +17,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["requests>=2.4.2", "ipython>=7.14.0"],
+    install_requires=["requests>=2.4.2", "ipython>=5.5.0"],
     python_requires=">=3.6",
 )
