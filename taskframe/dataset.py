@@ -3,7 +3,6 @@ import csv
 import json
 import mimetypes
 import random
-from datetime import datetime
 from pathlib import Path
 
 from .client import Client
@@ -139,7 +138,10 @@ class Dataset(object):
         items = [x for x in items if x.is_file() and x.name != ".DS_Store"]
 
         return cls.from_list(
-            items, input_type=cls.INPUT_TYPE_FILE, custom_ids=custom_ids, labels=labels,
+            items,
+            input_type=cls.INPUT_TYPE_FILE,
+            custom_ids=custom_ids,
+            labels=labels,
         )
 
     @classmethod
@@ -215,9 +217,7 @@ class Dataset(object):
             dataset, custom_ids=custom_ids, labels=labels, base_path=base_path
         )
 
-    def serialize_item(
-        self, item, taskframe_id, custom_id=None, label=None, base64enc=False
-    ):
+    def serialize_item(self, item, taskframe_id, custom_id=None, label=None):
         raise NotImplementedError()
 
     def sanity_check(self, items, custom_ids, labels):

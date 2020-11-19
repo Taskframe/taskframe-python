@@ -1,13 +1,10 @@
-import time
-from unittest.mock import MagicMock, call, mock_open, patch
-
 import pandas as pd
 import pytest
-from taskframe.client import API_URL, Client
+from taskframe.client import API_URL
 from taskframe.taskframe import InvalidParameter, Taskframe
 from taskframe.team_member import TeamMember
 
-from .test_utils import custom_mock_open, mock_client, mock_open_func
+from .test_utils import mock_client
 
 
 class TestClass:
@@ -40,7 +37,6 @@ class TestClass:
                 "id": "abcde",
                 "custom_id": "foo",
                 "taskframe_id": "dummy_id",
-                "taskframe_name": "",
                 "input_type": "file",
                 "status": "finished",
                 "label": "label1",
@@ -50,7 +46,6 @@ class TestClass:
                 "id": "fghi",
                 "custom_id": "bar",
                 "taskframe_id": "dummy_id",
-                "taskframe_name": "",
                 "input_type": "file",
                 "status": "finished",
                 "label": "label2",
@@ -113,7 +108,9 @@ class TestClass:
         Taskframe.client.session.get.return_value.json.return_value = self.tf_serialized
 
         tf = Taskframe.update(
-            self.tf.id, classes=["fizz", "buzz"], name="this is the name",
+            self.tf.id,
+            classes=["fizz", "buzz"],
+            name="this is the name",
         )
 
         assert isinstance(tf, Taskframe)
@@ -124,7 +121,8 @@ class TestClass:
         updated_tf_serialized["params"]["classes"] = ["fizz", "buzz"]
 
         Taskframe.client.session.put.assert_called_with(
-            f"{API_URL}/taskframes/{self.tf.id}/", json=updated_tf_serialized,
+            f"{API_URL}/taskframes/{self.tf.id}/",
+            json=updated_tf_serialized,
         )
 
     def test_create(self):
@@ -137,7 +135,9 @@ class TestClass:
             )
 
         tf = Taskframe.create(
-            data_type="text", task_type="classification", classes=["foo", "bar"],
+            data_type="text",
+            task_type="classification",
+            classes=["foo", "bar"],
         )
 
         Taskframe.client.session.post.assert_called_with(
@@ -162,7 +162,9 @@ class TestClass:
 
     def test_submit(self):
         tf = Taskframe(
-            data_type="text", task_type="classification", classes=["foo", "bar"],
+            data_type="text",
+            task_type="classification",
+            classes=["foo", "bar"],
         )
 
         tf.submit()
@@ -189,7 +191,8 @@ class TestClass:
 
     def test_add_team(self):
         self.tf.add_team(
-            workers=["prexisting@worker.com"], reviewers=["sam@reviewer.com"],
+            workers=["prexisting@worker.com"],
+            reviewers=["sam@reviewer.com"],
         )
 
         TeamMember.client.session.get.return_value.json.side_effect = [

@@ -1,14 +1,7 @@
-import time
-from unittest.mock import MagicMock, call, mock_open, patch
-
-import pandas as pd
-import pytest
-
 from taskframe import TeamMember
-from taskframe.client import API_URL, Client
-from taskframe.dataset import CustomIdsLengthMismatch, MissingLabelsMismatch
+from taskframe.client import API_URL
 
-from .test_utils import custom_mock_open, mock_client, mock_open_func
+from .test_utils import mock_client
 
 
 class TestTeamMemberClass:

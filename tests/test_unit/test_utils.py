@@ -1,12 +1,6 @@
-import time
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import MagicMock, mock_open
 
-import pandas as pd
-import pytest
-
-import taskframe
-from taskframe.client import API_URL, Client
-from taskframe.dataset import CustomIdsLengthMismatch, MissingLabelsMismatch
+from taskframe.client import Client
 
 
 def mock_open_func(filename, *args, **kwargs):

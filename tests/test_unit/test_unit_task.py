@@ -1,14 +1,7 @@
-import time
-from unittest.mock import MagicMock, call, mock_open, patch
-
-import pandas as pd
-import pytest
-
 from taskframe import Task
-from taskframe.client import API_URL, Client
-from taskframe.dataset import CustomIdsLengthMismatch, MissingLabelsMismatch
+from taskframe.client import API_URL
 
-from .test_utils import custom_mock_open, mock_client, mock_open_func
+from .test_utils import mock_client
 
 
 class TestTaskClass:
@@ -44,9 +37,13 @@ class TestTaskClass:
             "input_type": "url",
             "status": "pending_work",
             "label": None,
+            "priority": None,
         }
 
-        task = Task.update(self.task.id, custom_id="mycustomid2",)
+        task = Task.update(
+            self.task.id,
+            custom_id="mycustomid2",
+        )
 
         assert isinstance(task, Task)
 
@@ -62,6 +59,7 @@ class TestTaskClass:
                 "input_file": None,
                 "input_data": "",
                 "label": None,
+                "priority": None,
             },
         )
 
@@ -86,5 +84,6 @@ class TestTaskClass:
                 "input_type": None,
                 "initial_label": "foo",
                 "label": None,
+                "priority": None,
             },
         )

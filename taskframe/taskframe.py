@@ -2,16 +2,13 @@ import csv
 import json
 import os
 import random
-from pathlib import Path
 from warnings import warn
 
-import requests
 from IPython.display import HTML, Javascript, display
 
 from .client import Client
 from .dataset import Dataset, Trainingset
 from .team_member import TeamMember
-from .utils import is_url, remove_empty_values
 
 APP_ENDPOINT = os.environ.get("TASKFRAME_APP_ENDPOINT", "https://app.taskframe.ai")
 
@@ -190,14 +187,19 @@ class Taskframe(object):
 
     @classmethod
     def _create_from_dict(cls, data):
-        return cls.client.post(f"/taskframes/", json=data).json()
+        return cls.client.post("/taskframes/", json=data).json()
 
     @classmethod
     def _update_from_dict(cls, data):
         return cls.client.put(f"/taskframes/{data['id']}/", json=data).json()
 
     def preview(self):
-        message = {"type": "set_preview", "data": {"taskframe": self.to_dict(),}}
+        message = {
+            "type": "set_preview",
+            "data": {
+                "taskframe": self.to_dict(),
+            },
+        }
 
         if self.dataset and len(self.dataset):
             item, custom_id, label, _id = self.dataset.get_random()
@@ -334,7 +336,6 @@ class Taskframe(object):
             "id",
             "custom_id",
             "taskframe_id",
-            "taskframe_name",
             "input_data",
             "input_file",
             "input_url",
@@ -342,6 +343,7 @@ class Taskframe(object):
             "status",
             "label",
             "initial_label",
+            "priority",
         ]
         with open(path, "w") as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
@@ -478,11 +480,14 @@ class Taskframe(object):
         )
 
     def submit_training_requirement(
-        self, required_score=None,
+        self,
+        required_score=None,
     ):
         resp = self.client.post(
             f"/taskframes/{self.id}/set_training_requirement/",
-            json={"required_score": required_score,},
+            json={
+                "required_score": required_score,
+            },
         )
 
     # Team helper methods ###########################@

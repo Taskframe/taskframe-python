@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from .client import ApiError, Client
 from .utils import remove_empty_values
 
@@ -17,7 +15,12 @@ class TeamMember(object):
     client = Client()
 
     def __init__(
-        self, id=None, taskframe_id=None, role=None, status="active", email=None,
+        self,
+        id=None,
+        taskframe_id=None,
+        role=None,
+        status="active",
+        email=None,
     ):
 
         self.id = id

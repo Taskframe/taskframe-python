@@ -1,11 +1,9 @@
-import time
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import call, patch
 
 import pandas as pd
 import pytest
-
 import taskframe
-from taskframe.client import API_URL, Client
+from taskframe.client import API_URL
 from taskframe.dataset import CustomIdsLengthMismatch, MissingLabelsMismatch
 
 from .test_utils import custom_mock_open, mock_client, mock_open_func
@@ -22,7 +20,10 @@ class TestClass:
                     f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
-                        "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
+                        "input_file": (
+                            "foo.jpg",
+                            m_open("tests/imgs/foo.jpg", "rb"),
+                        ),
                         "custom_id": (None, 42),
                         "input_type": (None, "file"),
                     },
@@ -31,7 +32,10 @@ class TestClass:
                     f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
-                        "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
+                        "input_file": (
+                            "bar.jpg",
+                            m_open("tests/imgs/bar.jpg", "rb"),
+                        ),
                         "input_type": (None, "file"),
                         "custom_id": (None, 43),
                         "initial_label": (None, '"cat"'),
@@ -44,7 +48,10 @@ class TestClass:
                     f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
-                        "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
+                        "input_file": (
+                            "foo.jpg",
+                            m_open("tests/imgs/foo.jpg", "rb"),
+                        ),
                         "input_type": (None, "file"),
                         "custom_id": (None, "foo"),
                     },
@@ -53,7 +60,10 @@ class TestClass:
                     f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
-                        "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
+                        "input_file": (
+                            "bar.jpg",
+                            m_open("tests/imgs/bar.jpg", "rb"),
+                        ),
                         "custom_id": (None, "bar"),
                         "input_type": (None, "file"),
                         "initial_label": (None, '"cat"'),
@@ -66,7 +76,10 @@ class TestClass:
                     f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
-                        "input_file": ("foo.jpg", m_open("tests/imgs/foo.jpg", "rb"),),
+                        "input_file": (
+                            "foo.jpg",
+                            m_open("tests/imgs/foo.jpg", "rb"),
+                        ),
                         "custom_id": (None, 42),
                         "input_type": (None, "file"),
                         "initial_label": (None, '"dog"'),
@@ -77,7 +90,10 @@ class TestClass:
                     f"{API_URL}/tasks/",
                     files={
                         "taskframe_id": (None, cls.tf.id),
-                        "input_file": ("bar.jpg", m_open("tests/imgs/bar.jpg", "rb"),),
+                        "input_file": (
+                            "bar.jpg",
+                            m_open("tests/imgs/bar.jpg", "rb"),
+                        ),
                         "input_type": (None, "file"),
                         "custom_id": (None, 43),
                         "initial_label": (None, '"cat"'),
@@ -113,7 +129,8 @@ class TestClass:
     def test_add_from_list(self):
         with pytest.raises(CustomIdsLengthMismatch) as exception:
             self.tf.add_dataset_from_list(
-                ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"], custom_ids=[42, 43, 44],
+                ["tests/imgs/foo.jpg", "tests/imgs/bar.jpg"],
+                custom_ids=[42, 43, 44],
             )
 
         self.tf.add_dataset_from_list(
@@ -130,7 +147,10 @@ class TestClass:
             f"{API_URL}/tasks/",
             files={
                 "taskframe_id": (None, self.tf.id),
-                "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
+                "input_file": (
+                    "bar.jpg",
+                    mock_open_func("tests/imgs/bar.jpg", "rb"),
+                ),
                 "input_type": (None, "file"),
                 "custom_id": (None, 43),
                 "initial_label": (None, '"cat"'),
@@ -191,7 +211,10 @@ class TestClass:
             f"{API_URL}/tasks/",
             files={
                 "taskframe_id": (None, self.tf.id),
-                "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
+                "input_file": (
+                    "bar.jpg",
+                    mock_open_func("tests/imgs/bar.jpg", "rb"),
+                ),
                 "custom_id": (None, "bar"),
                 "input_type": (None, "file"),
                 "initial_label": (None, '"cat"'),
@@ -207,7 +230,8 @@ class TestClass:
 
         with pytest.raises(CustomIdsLengthMismatch) as exception:
             self.tf.add_dataset_from_list(
-                self.urls, custom_ids=[42, 43, 44],
+                self.urls,
+                custom_ids=[42, 43, 44],
             )
 
         self.tf.add_dataset_from_list(
@@ -277,7 +301,10 @@ class TestClass:
             f"{API_URL}/tasks/",
             files={
                 "taskframe_id": (None, self.tf.id),
-                "input_file": ("bar.jpg", mock_open_func("tests/imgs/bar.jpg", "rb"),),
+                "input_file": (
+                    "bar.jpg",
+                    mock_open_func("tests/imgs/bar.jpg", "rb"),
+                ),
                 "input_type": (None, "file"),
                 "custom_id": (None, 43),
                 "is_training": (None, True),

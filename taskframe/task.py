@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from .client import ApiError, Client
-from .utils import remove_empty_values
 
 
 class InvalidParameter(Exception):
@@ -12,6 +11,8 @@ class InvalidParameter(Exception):
 class Task(object):
 
     client = Client()
+
+    input_fields = ["input_url", "input_data", "input_file"]
 
     def __init__(
         self,
@@ -25,6 +26,7 @@ class Task(object):
         label=None,
         initial_label=None,
         status="pending_work",
+        priority=None,
     ):
 
         self.id = id
@@ -37,6 +39,7 @@ class Task(object):
         self.initial_label = initial_label
         self.label = label
         self.status = status
+        self.priority = priority
 
     def __repr__(self):
         return f"<Task object [{self.id}]>"
@@ -83,6 +86,7 @@ class Task(object):
         input_data="",
         input_file=None,
         initial_label=None,
+        priority=None,
     ):
 
         input_params = [input_url, input_data, input_file]
@@ -95,20 +99,17 @@ class Task(object):
         if not taskframe_id:
             raise InvalidParameter(f"Missing required taskframe_id parameter")
 
-        params = cls(
+        api_params = cls(
             custom_id=custom_id,
             taskframe_id=taskframe_id,
             input_url=input_url,
             input_data=input_data,
             input_file=input_file,
             initial_label=initial_label,
-        ).to_dict()
+            priority=priority,
+        ).to_api_params()
 
-        api_data = {}
-        if input_file:
-            api_data = cls.client.post(f"/tasks/", files=params).json()
-        else:
-            api_data = cls.client.post(f"/tasks/", json=params).json()
+        api_data = cls.client.post("/tasks/", **api_params).json()
         return cls.from_dict(api_data)
 
     @classmethod
@@ -123,24 +124,28 @@ class Task(object):
                 "input_url",
                 "input_data",
                 "input_file",
+                "priority",
             ]:
                 setattr(existing_instance, kwarg, value)
 
-            if kwarg in ["input_url", "input_data", "input_file",] and value:
+            if kwarg in cls.input_fields and value:
+                # unset other input_fields
                 existing_instance.input_type = None
+                other_input_fields = [x for x in cls.input_fields if x != kwarg]
+                for other_input_field in other_input_fields:
+                    empty_val = None if other_input_field == "input_file" else ""
+                    setattr(existing_instance, other_input_field, empty_val)
 
-        params = existing_instance.to_dict()
-        api_data = {}
-        if existing_instance.input_file:
-            api_data = cls.client.put(f"/tasks/{id}/", files=params).json()
-        else:
-            api_data = cls.client.put(f"/tasks/{id}/", json=params).json()
+        api_params = existing_instance.to_api_params()
+        api_data = cls.client.put(f"/tasks/{id}/", **api_params).json()
         return cls.from_dict(api_data)
 
     def submit(self):
         if self.id:
             self.update(
-                self.id, custom_id=None, initial_label=self.initial_label,
+                self.id,
+                custom_id=None,
+                initial_label=self.initial_label,
             )
         else:
             self.create(
@@ -150,29 +155,13 @@ class Task(object):
                 input_data=self.input_data,
                 input_file=self.input_file,
                 initial_label=self.initial_label,
+                priority=self.priority,
             )
 
     def dispose(self):
         self.client.post(f"/tasks/{self.id}/dispose/")
 
     def to_dict(self):
-
-        if self.input_file:
-            path = Path(self.input_file)
-            file_ = open(path, "rb")
-            data = {
-                "taskframe_id": (None, self.taskframe_id),
-                "input_file": (path.name, file_),
-                "input_data": (None, ""),
-                "input_url": (None, ""),
-                # "input_type": (None, self.input_type),
-            }
-            if self.custom_id:
-                data["custom_id"] = (None, self.custom_id)
-            if self.initial_label:
-                data["initial_label"] = (None, self.initial_label)
-            return data
-
         return {
             "id": self.id,
             "custom_id": self.custom_id,
@@ -183,6 +172,7 @@ class Task(object):
             "input_type": self.input_type,
             "initial_label": self.initial_label,
             "label": self.label,
+            "priority": self.priority,
         }
 
     @classmethod
@@ -199,4 +189,21 @@ class Task(object):
             label=data.get("label"),
             initial_label=data.get("initial_label"),
             status=data.get("status"),
+            priority=data.get("priority"),
         )
+
+    def to_api_params(self):
+        dict_data = self.to_dict()
+        if not self.input_file:
+            return {"json": dict_data}
+
+        path = Path(self.input_file)
+        file_ = open(path, "rb")
+        dict_data.pop("input_file")
+
+        return {
+            "files": {
+                "input_file": (path.name, file_),
+            },
+            "data": dict_data,
+        }

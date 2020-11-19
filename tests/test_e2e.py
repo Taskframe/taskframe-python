@@ -15,7 +15,7 @@ class TestClass:
         cls.tf.client.session.verify = False
 
     def test_progress(self):
-        data = self.tf.progress()
+        self.tf.progress()
 
     def test_add_from_folder(self):
         self.tf.dataset = None
@@ -99,15 +99,11 @@ class TestClass:
         self.tf.to_dataframe()
 
     def test_create(self):
-        self.tf.dataset = None
-        self.tf.trainingset = None
-        data = self.tf.progress()
-        num_tasks = data["num_tasks"]
-        dataframe = pd.read_csv("tests/img_paths.csv")
-        self.tf.add_dataset_from_dataframe(dataframe, column="path", base_path="tests")
-
         tf = taskframe.Taskframe(
-            data_type="image", task_type="classification", classes=["pos", "neg"]
+            data_type="image",
+            task_type="classification",
+            classes=["pos", "neg"],
+            name="e2e taskframe",
         )
         tf.submit()
 
@@ -121,34 +117,44 @@ class TestClass:
             custom_id=custom_id,
             taskframe_id=self.tf.id,
             input_file="tests/imgs/foo.jpg",
+            priority=0.5,
         )
 
         task = taskframe.Task.retrieve(custom_id=custom_id, taskframe_id=self.tf.id)
 
         assert task.input_type == "file"
         assert task.input_url == ""
+        assert task.priority == 0.5
 
         new_custom_id = rand()
         taskframe.Task.update(
-            task.id, custom_id=new_custom_id, input_url="http://example.com/img.jpg",
+            task.id,
+            custom_id=new_custom_id,
+            input_url="http://example.com/img.jpg",
+            priority=0.6,
         )
 
         task = taskframe.Task.retrieve(custom_id=new_custom_id, taskframe_id=self.tf.id)
 
         assert task.input_url == "http://example.com/img.jpg"
         assert task.input_type == "url"
+        assert task.priority == 0.6
 
         taskframe.Task.update(
-            task.id, input_file="tests/imgs/bar.jpg",
+            task.id,
+            input_file="tests/imgs/bar.jpg",
         )
 
         task = taskframe.Task.retrieve(custom_id=new_custom_id, taskframe_id=self.tf.id)
         assert task.input_url == ""
         assert task.input_type == "file"
+        assert task.priority == 0.6
 
     def test_team_member_class(self):
         member_id = taskframe.TeamMember.create(
-            taskframe_id=self.tf.id, email=f"{rand()}@{rand()}.com", role="worker",
+            taskframe_id=self.tf.id,
+            email=f"{rand()}@{rand()}.com",
+            role="worker",
         ).id
         member = taskframe.TeamMember.retrieve(id=member_id, taskframe_id=self.tf.id)
 
@@ -163,7 +169,7 @@ class TestClass:
         assert member.status == "inactive"
         assert member.role == "reviewer"
 
-    def test_export(self):
+    def test_to_csv(self):
         df = self.tf.to_dataframe()
         self.tf.to_csv("dev/test_e2e_export.csv")
 
