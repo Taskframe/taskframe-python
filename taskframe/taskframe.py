@@ -43,6 +43,7 @@ class Taskframe(object):
         "global_ui_schema",
         "multiple",
         "files_accepted",
+        "iterator",
     ]
 
     def __init__(
@@ -202,13 +203,18 @@ class Taskframe(object):
         }
 
         if self.dataset and len(self.dataset):
-            item, custom_id, label, _id = self.dataset.get_random()
-            serialized_item = self.dataset.serialize_item_preview(
-                item, self.id, label=label
+            is_batch = self.kwargs.get("iterator") == "batch"
+            num_items = 16 if is_batch else 1
+
+            serialized_items = []
+            for i in range(num_items):
+                item, custom_id, label, _id = self.dataset.get_random()
+                serialized_items.append(
+                    self.dataset.serialize_item_preview(item, self.id, label=label)
+                )
+            message["data"]["task"] = (
+                serialized_items if is_batch else serialized_items[0]
             )
-
-            message["data"]["task"] = serialized_item
-
         css_id = str(int(random.random() * 10000))
         html = f"""
             <iframe id="frame_{css_id}" src="{APP_ENDPOINT}/embed/preview" frameBorder=0 style="width: 100%; height: 600px;"></iframe>
