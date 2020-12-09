@@ -18,10 +18,6 @@ class TestClass:
             "data_type": "image",
             "task_type": "classification",
             "mode": "inhouse",
-            "json_schema": None,
-            "json_schema_url": "",
-            "ui_schema": None,
-            "ui_schema_url": "",
             "params": {},
             "instructions": "",
             "redundancy": 1,
@@ -116,9 +112,11 @@ class TestClass:
         assert isinstance(tf, Taskframe)
 
         updated_tf_serialized = self.tf_serialized.copy()
-
         updated_tf_serialized["name"] = "this is the name"
-        updated_tf_serialized["params"]["classes"] = ["fizz", "buzz"]
+        updated_tf_serialized["params"] = {
+            "global": {"classes": ["fizz", "buzz"]},
+            "region": {},
+        }
 
         Taskframe.client.session.put.assert_called_with(
             f"{API_URL}/taskframes/{self.tf.id}/",
@@ -147,11 +145,7 @@ class TestClass:
                 "name": "",
                 "data_type": "text",
                 "task_type": "classification",
-                "params": {"classes": ["foo", "bar"]},
-                "json_schema": None,
-                "json_schema_url": "",
-                "ui_schema": None,
-                "ui_schema_url": "",
+                "params": {"global": {"classes": ["foo", "bar"]}, "region": {}},
                 "instructions": "",
                 "mode": "inhouse",
                 "redundancy": 1,
@@ -176,11 +170,7 @@ class TestClass:
                 "name": "",
                 "data_type": "text",
                 "task_type": "classification",
-                "params": {"classes": ["foo", "bar"]},
-                "json_schema": None,
-                "json_schema_url": "",
-                "ui_schema": None,
-                "ui_schema_url": "",
+                "params": {"global": {"classes": ["foo", "bar"]}, "region": {}},
                 "instructions": "",
                 "mode": "inhouse",
                 "redundancy": 1,

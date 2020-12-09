@@ -16,4 +16,10 @@ def is_url(url):
 
 
 def remove_empty_values(obj):
-    return {k: v for k, v in obj.items() if v}
+    if isinstance(obj, dict):
+        return {
+            k: remove_empty_values(v)
+            for k, v in obj.items()
+            if v is not None and v != ""
+        }
+    return obj

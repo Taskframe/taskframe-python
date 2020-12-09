@@ -9,6 +9,7 @@ from IPython.display import HTML, Javascript, display
 from .client import Client
 from .dataset import Dataset, Trainingset
 from .team_member import TeamMember
+from .utils import remove_empty_values
 
 APP_ENDPOINT = os.environ.get("TASKFRAME_APP_ENDPOINT", "https://app.taskframe.ai")
 
@@ -37,10 +38,22 @@ class Taskframe(object):
     acceptable_params = [
         "classes",
         "tags",
+        "json_schema",
+        "json_schema_url",
+        "ui_schema",
+        "ui_schema_url",
         "global_classes",
         "global_tags",
         "global_json_schema",
+        "global_json_schema_url",
         "global_ui_schema",
+        "global_ui_schema_url",
+        "region_classes",
+        "region_tags",
+        "region_json_schema",
+        "region_json_schema_url",
+        "region_ui_schema",
+        "region_ui_schema_url",
         "multiple",
         "files_accepted",
         "iterator",
@@ -50,10 +63,6 @@ class Taskframe(object):
         self,
         data_type=None,
         task_type=None,
-        json_schema=None,
-        json_schema_url="",
-        ui_schema=None,
-        ui_schema_url="",
         instructions="",
         name="",
         id=None,
@@ -64,10 +73,6 @@ class Taskframe(object):
     ):
         self.data_type = data_type
         self.task_type = task_type
-        self.json_schema = json_schema
-        self.json_schema_url = json_schema_url
-        self.ui_schema = ui_schema
-        self.ui_schema_url = ui_schema_url
         self.instructions = instructions
         self.name = name
         self.id = id
@@ -109,10 +114,6 @@ class Taskframe(object):
         cls,
         data_type=None,
         task_type=None,
-        json_schema=None,
-        json_schema_url="",
-        ui_schema=None,
-        ui_schema_url="",
         instructions="",
         name="",
         review=True,
@@ -124,10 +125,6 @@ class Taskframe(object):
         params = cls(
             data_type=data_type,
             task_type=task_type,
-            json_schema=json_schema,
-            json_schema_url=json_schema_url,
-            ui_schema=ui_schema,
-            ui_schema_url=ui_schema_url,
             instructions=instructions,
             name=name,
             review=review,
@@ -147,10 +144,6 @@ class Taskframe(object):
         existing_instance = cls.retrieve(id)
 
         updatable_attrs = [
-            "json_schema",
-            "json_schema_url",
-            "ui_schema",
-            "ui_schema_url",
             "instructions",
             "name",
             "review",
@@ -256,16 +249,12 @@ class Taskframe(object):
     @classmethod
     def from_dict(cls, data):
         """Takes dict data from API, returns a Taskframe instance"""
-        kwargs = data.get("params", {})
+        kwargs = cls._deserialize_params(data.get("params", {}))
 
         return cls(
             id=data.get("id"),
             data_type=data.get("data_type"),
             task_type=data.get("task_type"),
-            json_schema=data.get("json_schema"),
-            json_schema_url=data.get("json_schema_url", ""),
-            ui_schema=data.get("ui_schema"),
-            ui_schema_url=data.get("ui_schema_url", ""),
             instructions=data.get("instructions", ""),
             name=data.get("name", ""),
             redundancy=data.get("redundancy"),
@@ -281,10 +270,6 @@ class Taskframe(object):
             "data_type": self.data_type,
             "task_type": self.task_type,
             "params": self._serialize_params(),
-            "json_schema": self.json_schema,
-            "json_schema_url": "",
-            "ui_schema": self.ui_schema,
-            "ui_schema_url": "",
             "instructions": self.instructions,
             "mode": "inhouse",
             "redundancy": self.redundancy,
@@ -293,9 +278,58 @@ class Taskframe(object):
         }
 
     def _serialize_params(self):
-        return {
-            k: self.kwargs.get(k) for k in self.acceptable_params if self.kwargs.get(k)
-        }
+        return remove_empty_values(
+            {
+                "global": {
+                    "classes": self.kwargs.get("global_classes")
+                    or self.kwargs.get("classes"),
+                    "tags": self.kwargs.get("global_tags") or self.kwargs.get("tags"),
+                    "json_schema": self.kwargs.get("global_json_schema")
+                    or self.kwargs.get("json_schema"),
+                    "json_schema_url": self.kwargs.get("global_json_schema_url")
+                    or self.kwargs.get("json_schema_url"),
+                    "ui_schema": self.kwargs.get("global_ui_schema")
+                    or self.kwargs.get("ui_schema"),
+                    "ui_schema_url": self.kwargs.get("global_ui_schema_url")
+                    or self.kwargs.get("ui_schema_url"),
+                },
+                "region": {
+                    "classes": self.kwargs.get("region_classes"),
+                    "tags": self.kwargs.get("region_tags"),
+                    "json_schema": self.kwargs.get("region_json_schema"),
+                    "json_schema_url": self.kwargs.get("region_json_schema_url"),
+                    "ui_schema": self.kwargs.get("region_ui_schema"),
+                    "ui_schema_url": self.kwargs.get("region_ui_schema_url"),
+                },
+                "multiple": self.kwargs.get("multiple"),
+                "files_accepted": self.kwargs.get("files_accepted"),
+                "iterator": self.kwargs.get("iterator"),
+            }
+        )
+
+    @classmethod
+    def _deserialize_params(cls, params):
+        global_params = params.get("global", {})
+        region_params = params.get("region", {})
+        return remove_empty_values(
+            {
+                "global_classes": global_params.get("classes"),
+                "global_tags": global_params.get("tags"),
+                "global_json_schema": global_params.get("json_schema"),
+                "global_json_schema_url": global_params.get("json_schema_url"),
+                "global_ui_schema": global_params.get("ui_schema"),
+                "global_ui_schema_url": global_params.get("ui_schema_url"),
+                "region_classes": region_params.get("classes"),
+                "region_tags": region_params.get("tags"),
+                "region_json_schema": region_params.get("json_schema"),
+                "region_json_schema_url": region_params.get("json_schema_url"),
+                "region_ui_schema": region_params.get("ui_schema"),
+                "region_ui_schema_url": region_params.get("ui_schema_url"),
+                "multiple": params.get("multiple"),
+                "files_accepted": params.get("files_accepted"),
+                "iterator": params.get("iterator"),
+            }
+        )
 
     def _check_params(self, kwargs):
 
