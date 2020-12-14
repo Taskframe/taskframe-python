@@ -18,7 +18,7 @@ class TestClass:
             "data_type": "image",
             "task_type": "classification",
             "mode": "inhouse",
-            "params": {},
+            "params": {"classes": ["label1", "label2"]},
             "instructions": "",
             "redundancy": 1,
             "review": True,
@@ -28,7 +28,7 @@ class TestClass:
 
         TeamMember.client = mock_client()
 
-        cls.get_tasks_mock_data = [
+        cls.export_tasks_mock_data = [
             {
                 "id": "abcde",
                 "custom_id": "foo",
@@ -37,6 +37,14 @@ class TestClass:
                 "status": "finished",
                 "label": "label1",
                 "initial_label": None,
+                "priority": None,
+                "created_at": "2020-01-01T00:00:00.Z",
+                "assignment_id": None,
+                "time_spent": None,
+                "worker": None,
+                "reviewer": None,
+                "started_at": None,
+                "finished_at": None,
             },
             {
                 "id": "fghi",
@@ -46,6 +54,14 @@ class TestClass:
                 "status": "finished",
                 "label": "label2",
                 "initial_label": None,
+                "priority": None,
+                "created_at": "2020-01-01T00:00:00.Z",
+                "assignment_id": None,
+                "time_spent": None,
+                "worker": None,
+                "reviewer": None,
+                "started_at": None,
+                "finished_at": None,
             },
         ]
 
@@ -232,19 +248,20 @@ class TestClass:
 
     def test_to_list(self):
         Taskframe.client.session.get.return_value.json.return_value = (
-            self.get_tasks_mock_data
+            self.export_tasks_mock_data
         )
         data = self.tf.to_list()
 
         assert [x["label"] for x in data] == ["label1", "label2"]
 
         Taskframe.client.session.get.assert_called_with(
-            f"{API_URL}/tasks/", params={"taskframe_id": self.tf.id, "no_page": 1}
+            f"{API_URL}/tasks/export/",
+            params={"taskframe_id": self.tf.id, "no_page": 1},
         )
 
     def test_to_csv(self):
         Taskframe.client.session.get.return_value.json.return_value = (
-            self.get_tasks_mock_data
+            self.export_tasks_mock_data
         )
         csv = self.tf.to_csv("dev/test_unit_export.csv")
         df = pd.read_csv("dev/test_unit_export.csv")
@@ -252,7 +269,7 @@ class TestClass:
 
     def test_to_dataframe(self):
         Taskframe.client.session.get.return_value.json.return_value = (
-            self.get_tasks_mock_data
+            self.export_tasks_mock_data
         )
 
         df = self.tf.to_dataframe()

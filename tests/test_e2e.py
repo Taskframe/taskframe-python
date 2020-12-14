@@ -169,6 +169,27 @@ class TestClass:
         assert member.status == "inactive"
         assert member.role == "reviewer"
 
+    def test_to_list(self):
+        data = self.tf.to_list()
+        assert sorted(data[0].keys()) == [
+            "assignment_id",
+            "created_at",
+            "custom_id",
+            "finished_at",
+            "id",
+            "initial_label",
+            "input_type",
+            "label",
+            "priority",
+            "reviewer",
+            "started_at",
+            "status",
+            "taskframe_id",
+            "time_spent",
+            "worker",
+        ]
+        # self.tf.to_csv("dev/test_e2e_export.csv")
+
     def test_to_csv(self):
         df = self.tf.to_dataframe()
         self.tf.to_csv("dev/test_e2e_export.csv")

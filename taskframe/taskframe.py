@@ -349,7 +349,7 @@ class Taskframe(object):
 
     def to_list(self):
         resp = self.client.get(
-            f"/tasks/", params={"taskframe_id": self.id, "no_page": 1}
+            f"/tasks/export/", params={"taskframe_id": self.id, "no_page": 1}
         )
         return resp.json()
 
@@ -381,9 +381,17 @@ class Taskframe(object):
             "input_url",
             "input_type",
             "status",
-            "label",
             "initial_label",
             "priority",
+            "created_at",
+            #
+            "label",
+            "assignment_id",
+            "worker",
+            "reviewer",
+            "started_at",
+            "finished_at",
+            "time_spent",
         ]
         with open(path, "w") as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
