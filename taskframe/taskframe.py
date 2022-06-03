@@ -271,7 +271,6 @@ class Taskframe(object):
             "task_type": self.task_type,
             "params": self._serialize_params(),
             "instructions": self.instructions,
-            "mode": "inhouse",
             "redundancy": self.redundancy,
             "review": self.review,
             "callback_url": self.callback_url,

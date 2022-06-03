@@ -132,4 +132,5 @@ Makefile
 .DS_Store
 .vscode
 dev
+tmp
 *dev.ipynb

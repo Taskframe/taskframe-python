@@ -17,7 +17,6 @@ class TestClass:
             "name": "",
             "data_type": "image",
             "task_type": "classification",
-            "mode": "inhouse",
             "params": {"classes": ["label1", "label2"]},
             "instructions": "",
             "redundancy": 1,
@@ -88,7 +87,6 @@ class TestClass:
                     "num_pending_work": 0,
                     "num_pending_review": 0,
                     "num_finished": 0,
-                    "mode": "inhouse",
                     "env": "sandbox",
                 },
                 {
@@ -101,7 +99,6 @@ class TestClass:
                     "num_pending_work": 0,
                     "num_pending_review": 0,
                     "num_finished": 0,
-                    "mode": "inhouse",
                     "env": "sandbox",
                 },
             ],
@@ -163,7 +160,6 @@ class TestClass:
                 "task_type": "classification",
                 "params": {"global": {"classes": ["foo", "bar"]}, "region": {}},
                 "instructions": "",
-                "mode": "inhouse",
                 "redundancy": 1,
                 "review": True,
                 "callback_url": "",
@@ -188,7 +184,6 @@ class TestClass:
                 "task_type": "classification",
                 "params": {"global": {"classes": ["foo", "bar"]}, "region": {}},
                 "instructions": "",
-                "mode": "inhouse",
                 "redundancy": 1,
                 "review": True,
                 "callback_url": "",
@@ -263,8 +258,8 @@ class TestClass:
         Taskframe.client.session.get.return_value.json.return_value = (
             self.export_tasks_mock_data
         )
-        csv = self.tf.to_csv("dev/test_unit_export.csv")
-        df = pd.read_csv("dev/test_unit_export.csv")
+        csv = self.tf.to_csv("tmp/test_unit_export.csv")
+        df = pd.read_csv("tmp/test_unit_export.csv")
         assert list(df.label) == ["label1", "label2"]
 
     def test_to_dataframe(self):

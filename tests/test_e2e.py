@@ -188,11 +188,11 @@ class TestClass:
             "time_spent",
             "worker",
         ]
-        # self.tf.to_csv("dev/test_e2e_export.csv")
+        # self.tf.to_csv("tmp/test_e2e_export.csv")
 
     def test_to_csv(self):
         df = self.tf.to_dataframe()
-        self.tf.to_csv("dev/test_e2e_export.csv")
+        self.tf.to_csv("tmp/test_e2e_export.csv")
 
     def test_merge_to_dataframe(self):
         initial_dataframe = pd.read_csv("tests/img_paths.csv")[["path", "identifier"]]
